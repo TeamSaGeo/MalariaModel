@@ -10,11 +10,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setupUi(self)
         self.pageInd = self.stackedWidget.currentIndex()
-        self.pushButton_parcelFileName.clicked.connect(lambda : self.selectInputFile(self.parcelFileName, "*.shp"))
-        self.pushButton_rainFileName.clicked.connect(lambda : self.selectInputFile(self.rainFileName,"*.csv"))
-        self.pushButton_tempFileName.clicked.connect(lambda : self.selectInputFile(self.tempFileName,"*.csv"))
-        self.pushButton_pathOutput.clicked.connect(self.selectOutputDir)
-        self.pushButton_run.clicked.connect(self.run)
+        self.btn_parcelFileName.clicked.connect(lambda : self.selectInputFile(self.parcelFileName, "*.shp"))
+        self.btn_rainFileName.clicked.connect(lambda : self.selectInputFile(self.rainFileName,"*.csv"))
+        self.btn_tempFileName.clicked.connect(lambda : self.selectInputFile(self.tempFileName,"*.csv"))
+        self.btn_pathOutput.clicked.connect(self.selectOutputDir)
+        self.btn_next.clicked.connect(self.next)
+        self.btn_back.clicked.connect(self.previous)
 
     def selectInputFile(self, input, extension):
         path, _filter = QtWidgets.QFileDialog.getOpenFileName(
@@ -58,7 +59,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.label_output_format.setStyleSheet("color: red")
             return True
 
-    def run(self):
+    def previous(self):
+        if self.pageInd == 1:
+            self.pageInd -= 1
+            self.stackedWidget.setCurrentIndex(self.pageInd)
+
+    def next(self):
         if self.pageInd == 0:
             if self.EmptyLineEdit(self.parcelFileName) or self.EmptyLineEdit(self.rainFileName) or self.EmptyLineEdit(self.tempFileName):
                 button = QtWidgets.QMessageBox.information(
@@ -68,7 +74,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     )
             else:
                 self.pageInd += 1
-                self.stackedWidget.setCurrentIndex(self.pageInd)
+                self.groupBoxInputParam.setEnabled(False)
+                self.groupBoxOutputParam.setEnabled(True)
+                self.bdate.setEnabled(True)
+                self.bdate_output.setEnabled(True)
+                self.edate.setEnabled(True)
+                # self.stackedWidget.setCurrentIndex(self.pageInd)
 
                 # 1) Instanciation des datafacers : inputs
                 # 2) Instanciation des datafacers : outputs
@@ -102,7 +113,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     "Remplir les champs requis",
                     )
             else:
-                self.pushButton_run.setEnabled(False)
+                self.btn_next.setEnabled(False)
                 # # 4) Initialisation
                 self.textEdit.append("Initialization ... ")
                 self.model.initialisation()
@@ -110,6 +121,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 # # 5) Simulation
                 now = self.bdate.date()
                 day = 0
+                self.textEdit.append("Simulation start: "+ self.bdate.date().toString("dd/MM/yyyy"))
+
                 # fin = now
                 # test_display = 0.0
                 shp_list = gpd.GeoDataFrame()
@@ -142,7 +155,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     "Status",
                     "Simulation terminee !",
                     )
-                self.pushButton_run.setEnabled(True)
+                self.btn_next.setEnabled(True)
 
 def main():
     app = QtWidgets.QApplication(sys.argv)

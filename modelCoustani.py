@@ -44,40 +44,6 @@ class ModelCoustani:
         # shp = gpd.read_file(parcelFileName) # le shapefile avec les parcelles
         self.shp = gpd.read_file(self.iface.parcelFileName.text()) # le shapefile avec les parcelles
 
-    def readData(self):
-        # 1) Instanciation des datafacers : inputs
-        # Donnees meteo
-        # rainCSVData = pd.read_csv(rainFileName,delimiter=";")# le fichier texte (csv) avec les donnees Meteo : pluies
-        # tempCSVData = pd.read_csv(tempFileName,delimiter=";") # le fichier texte (csv) avec les donnees Meteo : temperatures
-        msg = "Reading data ...\n"
-        # self.rainCSVData = pd.read_csv(self.iface.rainFileName.text(),delimiter=";")# le fichier texte (csv) avec les donnees Meteo : pluies
-        # self.tempCSVData = pd.read_csv(self.iface.tempFileName.text(),delimiter=";") # le fichier texte (csv) avec les donnees Meteo : temperatures
-        #
-        # # # Parcelles
-        # # shp = gpd.read_file(parcelFileName) # le shapefile avec les parcelles
-        # self.shp = gpd.read_file(self.iface.parcelFileName.text()) # le shapefile avec les parcelles
-
-        msg += "found "+ str(self.shp.shape[0]) +" parcels\n"
-        msg += "Size of rain data file: " + str(len(self.rainCSVData)) +"\n"
-        msg += "Size of temperature data file: " + str(len(self.tempCSVData))
-        return msg
-
-        # 3) Lecture des donnees
-        #print("Reading data ... ")
-        # Parcelles
-        # List of Parcels obtained from the Shapefile datafacer ShpParcelle
-        # print("found "+ str(shp.shape[0]) +" parcels" )
-        #
-        # ## Donnees meteo
-        # print("Size of rain data file: " + str(len(rainCSVData)))
-        # print("Size of temperature data file: " + str(len(tempCSVData)))
-
-        # construction des keymaps meteo
-        # kmrain =  # Keymap <codecommmune_year_week, rain>
-        # kmtemp =  # Keymap <codecommmune_year_week, temperature>
-        # constructionKeyMap(kmrain,datarain)
-        # constructionKeyMap(kmtemp,datatemp)
-
     def add_years(self,d):
         """Return a date that's `years` years after the date (or datetime)
         object `d`. Return the same calendar date (month and day) in the
