@@ -1,11 +1,12 @@
 import sys
-from PyQt6 import QtWidgets, uic, QtCore
+from PyQt6 import uic, QtCore
+from PyQt6.QtWidgets import *
 from mainwindow import Ui_MainWindow
 from modelCoustani import ModelCoustani
 import geopandas as gpd
 import pandas as pd
 
-class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
+class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, *args, obj=None, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setupUi(self)
@@ -13,25 +14,46 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.btn_parcelFileName.clicked.connect(lambda : self.selectInputFile(self.parcelFileName, "*.shp"))
         self.btn_rainFileName.clicked.connect(lambda : self.selectInputFile(self.rainFileName,"*.csv"))
         self.btn_tempFileName.clicked.connect(lambda : self.selectInputFile(self.tempFileName,"*.csv"))
+        self.btn_load.clicked.connect(self.load)
+        self.listWidget.itemSelectionChanged.connect(self.next)
         self.btn_pathOutput.clicked.connect(self.selectOutputDir)
-        self.btn_next.clicked.connect(self.next)
-        self.btn_back.clicked.connect(self.previous)
+
+        # self.btn_next.clicked.connect(self.next)
+        # self.btn_back.clicked.connect(self.previous)
+
+
+
+        menu = ["Paramètres d'entrées", "Paramètres de sortie", "Exécuter"]
+        columns = ["Paramètres KL", "Précipitations", "Températures"]
+        rows = ["Lieu","Année","Type de données","Surface des plans d'eau (m2)",
+                                            "Surface des rivieres (m2)",
+                                            "Surface des cultures agricoles (m2)",
+                                            "Surface des rizières (m2)",
+                                            "Surface totale (m2)"]
+
+        self.listWidget.addItems(menu)
+        self.columnCount = len(columns)
+        self.rowCount = len(rows)
+        self.tableWidget.setColumnCount(self.columnCount)
+        self.tableWidget.setRowCount(self.rowCount)
+        self.tableWidget.setHorizontalHeaderLabels(columns)
+        self.tableWidget.setVerticalHeaderLabels(rows)
 
     def selectInputFile(self, input, extension):
-        path, _filter = QtWidgets.QFileDialog.getOpenFileName(
+        path, _filter = QFileDialog.getOpenFileName(
             self.centralwidget, "Choisir le fichier", "", extension)
         if _filter:
             input.setText(path)
             input.setStyleSheet("border: 1px solid white")
         else:
-            button = QtWidgets.QMessageBox.information(
+            button = QMessageBox.information(
                     self.centralwidget,
                     "Erreur",
                     "Choisir un fichier valide",
                     )
 
     def selectOutputDir(self):
-        foldername = QtWidgets.QFileDialog.getExistingDirectory(
+        foldername = QFileDialog.getExistingDirectory(
             self.centralwidget,"Sélectionner le répertoire de sortie")
         if foldername:
             self.pathOutput.setText(foldername)
@@ -64,56 +86,115 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.pageInd -= 1
             self.stackedWidget.setCurrentIndex(self.pageInd)
 
+    def load(self):
+        if self.EmptyLineEdit(self.parcelFileName) or self.EmptyLineEdit(self.rainFileName) or self.EmptyLineEdit(self.tempFileName):
+            button = QMessageBox.information(
+                self.centralwidget,
+                "Erreur",
+                "Remplir les champs requis",
+                )
+        else:
+            # 1) Instanciation des datafacers : inputs
+            # 2) Instanciation des datafacers : outputs
+            self.textEdit.setText("Model ModeleCoustani ready to run")
+            QtCore.QCoreApplication.processEvents()
+
+            # 3) Lecture des donnees
+            self.model = ModelCoustani(self)
+            msg = "Reading data ...\n"
+            msg += "found "+ str(self.model.shp.shape[0]) +" parcels\n"
+            msg += "Size of rain data file: " + str(len(self.model.rainCSVData)) +"\n"
+            msg += "Size of temperature data file: " + str(len(self.model.tempCSVData))
+            self.textEdit.append(msg)
+
+            environment_fields = self.model.shp.columns
+            precip_fields = self.model.rainCSVData.columns
+            temp_fields = self.model.tempCSVData
+
+            self.groupBoxInputParam.setEnabled(False)
+            self.tableWidget.setEnabled(True)
+
+            for row in range(self.rowCount):
+                for col in range (self.columnCount):
+                    field_name = QComboBox()
+
+                    if ((row == 1 or row == 2) and col == 0) or (row >= 3 and col >= 1):
+                        field_name = QLineEdit()
+                        field_name.setEnabled(False)
+
+                    elif col == 0:
+                        field_name.addItems(environment_fields)
+                    elif row == 2:
+                        field_name.addItems(["journalier","hebdomadaire"])
+                    elif col == 1:
+                        field_name.addItems(precip_fields)
+                    else:
+                        field_name.addItems(temp_fields)
+
+                    self.tableWidget.setCellWidget(row, col, field_name)
+
+            bdate_min = self.model.tempCSVData['numero_annee'].min()
+            bdate_max = self.model.tempCSVData['numero_annee'].max()
+            bdate_output_max = QtCore.QDate(bdate_max,12,31)
+            self.bdate.setMinimumDate(QtCore.QDate(bdate_min,1,1))
+            self.bdate.setMaximumDate(QtCore.QDate(bdate_max,12,31))
+            self.bdate_output.setMinimumDate(QtCore.QDate(bdate_min+1,1,1))
+            self.bdate_output.setMaximumDate(bdate_output_max)
+            self.edate.setMinimumDate(QtCore.QDate(bdate_min+1,1,1))
+            self.edate.setMaximumDate(bdate_output_max)
+
+    def kl_param_error(self):
+        for col in range(self.columnCount):
+            list_selected_field = []
+            for row in range(self.rowCount):
+                field_name = self.tableWidget.cellWidget(row,col)
+                if field_name.metaObject().className() == "QComboBox" :
+                    list_selected_field.append(field_name.currentText())
+            if len(list_selected_field) != len(set(list_selected_field)):
+                button = QMessageBox.information(
+                    self.centralwidget,
+                    "Erreur",
+                    "Choisir des différents valeurs pour la colonne " + str(col+1),
+                    )
+                return True
+        return False
+
     def next(self):
-        if self.pageInd == 0:
+        i = self.listWidget.currentRow()
+        if i == 0:
+            self.stackedWidget.setCurrentIndex(0)
+
+        if i == 1:
+            # verifier paramètres KL
             if self.EmptyLineEdit(self.parcelFileName) or self.EmptyLineEdit(self.rainFileName) or self.EmptyLineEdit(self.tempFileName):
-                button = QtWidgets.QMessageBox.information(
+                button = QMessageBox.information(
+                    self.centralwidget,
+                    "Erreur",
+                    "Remplir les champs requis",
+                    )
+                self.listWidget.setCurrentRow(0)
+            elif self.kl_param_error():
+                self.listWidget.setCurrentRow(0)
+            else:
+                self.stackedWidget.setCurrentIndex(1)
+
+
+        if i == 2 :
+            if self.stackedWidget.currentIndex() == 0:
+                # button = QMessageBox.information(
+                #     self.centralwidget,
+                #     "Erreur",
+                #     "Remplir les paramètres d'entrées",
+                #     )
+                self.listWidget.setCurrentRow(0)
+            elif self.EmptyLineEdit(self.pathOutput) or self.anyCheckedFormat():
+                button = QMessageBox.information(
                     self.centralwidget,
                     "Erreur",
                     "Remplir les champs requis",
                     )
             else:
-                self.pageInd += 1
-                self.groupBoxInputParam.setEnabled(False)
-                self.groupBoxOutputParam.setEnabled(True)
-                self.bdate.setEnabled(True)
-                self.bdate_output.setEnabled(True)
-                self.edate.setEnabled(True)
-                # self.stackedWidget.setCurrentIndex(self.pageInd)
-
-                # 1) Instanciation des datafacers : inputs
-                # 2) Instanciation des datafacers : outputs
-                self.textEdit.setText("Model ModeleCoustani ready to run")
-                QtCore.QCoreApplication.processEvents()
-
-                # 3) Lecture des donnees
-                self.model = ModelCoustani(self)
-                msg = "Reading data ...\n"
-                msg += "found "+ str(self.model.shp.shape[0]) +" parcels\n"
-                msg += "Size of rain data file: " + str(len(self.model.rainCSVData)) +"\n"
-                msg += "Size of temperature data file: " + str(len(self.model.tempCSVData))
-                self.textEdit.append(msg)
-                QtCore.QCoreApplication.processEvents()
-
-                bdate_min = self.model.tempCSVData['numero_annee'].min()
-                bdate_max = self.model.tempCSVData['numero_annee'].max()
-                bdate_output_max = QtCore.QDate(bdate_max,12,31)
-                self.bdate.setMinimumDate(QtCore.QDate(bdate_min,1,1))
-                self.bdate.setMaximumDate(QtCore.QDate(bdate_max,12,31))
-                self.bdate_output.setMinimumDate(QtCore.QDate(bdate_min+1,1,1))
-                self.bdate_output.setMaximumDate(bdate_output_max)
-                self.edate.setMinimumDate(QtCore.QDate(bdate_min+1,1,1))
-                self.edate.setMaximumDate(bdate_output_max)
-
-        elif self.pageInd == 1:
-            if self.EmptyLineEdit(self.pathOutput) or self.anyCheckedFormat():
-                button = QtWidgets.QMessageBox.information(
-                    self.centralwidget,
-                    "Erreur",
-                    "Remplir les champs requis",
-                    )
-            else:
-                self.btn_next.setEnabled(False)
+                # self.btn_next.setEnabled(False)
                 # # 4) Initialisation
                 self.textEdit.append("Initialization ... ")
                 self.model.initialisation()
@@ -150,15 +231,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
                 # # 5) Export KML
                 self.model.exportResult(shp_list,kml_list)
-                button = QtWidgets.QMessageBox.information(
+                button = QMessageBox.information(
                     self.centralwidget,
                     "Status",
                     "Simulation terminee !",
                     )
-                self.btn_next.setEnabled(True)
+                # self.btn_next.setEnabled(True)
 
 def main():
-    app = QtWidgets.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
     app.exec()
