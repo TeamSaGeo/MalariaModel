@@ -21,6 +21,22 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_4">
+    <item row="0" column="1" alignment="Qt::AlignTop">
+     <widget class="QListWidget" name="listWidget">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>150</width>
+        <height>16777215</height>
+       </size>
+      </property>
+     </widget>
+    </item>
     <item row="0" column="3">
      <widget class="QTextEdit" name="textEdit">
       <property name="sizePolicy">
@@ -86,8 +102,8 @@
            <string>Nom des fichiers d'entrée</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_2">
-           <item row="1" column="3">
-            <widget class="QLineEdit" name="parcelFileName">
+           <item row="3" column="3">
+            <widget class="QLineEdit" name="tempFileName">
              <property name="enabled">
               <bool>false</bool>
              </property>
@@ -95,18 +111,6 @@
               <font>
                <bold>false</bold>
               </font>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="1">
-            <widget class="QLabel" name="label_tempFileName">
-             <property name="font">
-              <font>
-               <bold>false</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>Températures:</string>
              </property>
             </widget>
            </item>
@@ -122,8 +126,8 @@
              </property>
             </widget>
            </item>
-           <item row="3" column="3">
-            <widget class="QLineEdit" name="tempFileName">
+           <item row="1" column="3">
+            <widget class="QLineEdit" name="parcelFileName">
              <property name="enabled">
               <bool>false</bool>
              </property>
@@ -134,15 +138,36 @@
              </property>
             </widget>
            </item>
-           <item row="1" column="1">
-            <widget class="QLabel" name="label_parcelFileName">
+           <item row="3" column="4">
+            <widget class="QToolButton" name="btn_tempFileName">
+             <property name="text">
+              <string>...</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="4">
+            <widget class="QToolButton" name="btn_rainFileName">
+             <property name="text">
+              <string>...</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QLabel" name="label_tempFileName">
              <property name="font">
               <font>
                <bold>false</bold>
               </font>
              </property>
              <property name="text">
-              <string>Fichier environnemental:</string>
+              <string>Températures:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="4">
+            <widget class="QToolButton" name="btn_parcelFileName">
+             <property name="text">
+              <string>...</string>
              </property>
             </widget>
            </item>
@@ -158,27 +183,6 @@
              </property>
             </widget>
            </item>
-           <item row="2" column="4">
-            <widget class="QToolButton" name="btn_rainFileName">
-             <property name="text">
-              <string>...</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="4">
-            <widget class="QToolButton" name="btn_parcelFileName">
-             <property name="text">
-              <string>...</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="4">
-            <widget class="QToolButton" name="btn_tempFileName">
-             <property name="text">
-              <string>...</string>
-             </property>
-            </widget>
-           </item>
            <item row="4" column="2" colspan="2">
             <layout class="QHBoxLayout" name="horizontalLayout">
              <item>
@@ -190,12 +194,15 @@
                 </size>
                </property>
                <property name="text">
-                <string>Effacer</string>
+                <string>Annuler</string>
                </property>
               </widget>
              </item>
              <item>
               <widget class="QPushButton" name="btn_load">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
                <property name="maximumSize">
                 <size>
                  <width>100</width>
@@ -209,6 +216,18 @@
              </item>
             </layout>
            </item>
+           <item row="1" column="1">
+            <widget class="QLabel" name="label_parcelFileName">
+             <property name="font">
+              <font>
+               <bold>false</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>Fichier environnemental:</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </widget>
         </item>
@@ -216,7 +235,7 @@
       </widget>
       <widget class="QWidget" name="page_2">
        <layout class="QGridLayout" name="gridLayout_5">
-        <item row="0" column="0">
+        <item row="0" column="1">
          <widget class="QGroupBox" name="groupBox">
           <property name="font">
            <font>
@@ -227,115 +246,6 @@
            <string>Paramètres de sortie</string>
           </property>
           <layout class="QGridLayout" name="gridLayout">
-           <item row="5" column="1">
-            <widget class="QDateEdit" name="edate">
-             <property name="enabled">
-              <bool>true</bool>
-             </property>
-             <property name="font">
-              <font>
-               <bold>false</bold>
-              </font>
-             </property>
-             <property name="calendarPopup">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="label_bdate">
-             <property name="font">
-              <font>
-               <bold>false</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>Date de début de simulation:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="0">
-            <widget class="QLabel" name="label_bdate_output">
-             <property name="font">
-              <font>
-               <bold>false</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>Date de début des sorties:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QLineEdit" name="pathOutput">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="font">
-              <font>
-               <bold>false</bold>
-              </font>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_DT">
-             <property name="font">
-              <font>
-               <bold>false</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>Pas de temps:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QDoubleSpinBox" name="DT">
-             <property name="font">
-              <font>
-               <bold>false</bold>
-              </font>
-             </property>
-             <property name="minimum">
-              <double>0.100000000000000</double>
-             </property>
-             <property name="singleStep">
-              <double>0.100000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="2">
-            <widget class="QToolButton" name="btn_pathOutput">
-             <property name="text">
-              <string>...</string>
-             </property>
-            </widget>
-           </item>
-           <item row="6" column="1">
-            <widget class="QCheckBox" name="outputSHPAllDates">
-             <property name="font">
-              <font>
-               <bold>false</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>Shapefile multidate</string>
-             </property>
-            </widget>
-           </item>
-           <item row="6" column="0">
-            <widget class="QLabel" name="label_output_format">
-             <property name="font">
-              <font>
-               <bold>false</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>Format:</string>
-             </property>
-            </widget>
-           </item>
            <item row="4" column="1">
             <widget class="QDateEdit" name="bdate_output">
              <property name="enabled">
@@ -351,31 +261,16 @@
              </property>
             </widget>
            </item>
-           <item row="8" column="1">
-            <widget class="QCheckBox" name="outputKMLAllDates">
+           <item row="3" column="2" colspan="2">
+            <widget class="QComboBox" name="frequence">
              <property name="font">
               <font>
                <bold>false</bold>
               </font>
              </property>
-             <property name="text">
-              <string>KML multidate</string>
-             </property>
             </widget>
            </item>
-           <item row="9" column="1" colspan="2">
-            <widget class="QCheckBox" name="outputKMLLastDate">
-             <property name="font">
-              <font>
-               <bold>false</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>KML de la dernière date</string>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="0">
+           <item row="4" column="2">
             <widget class="QLabel" name="label_edate">
              <property name="font">
               <font>
@@ -383,24 +278,51 @@
               </font>
              </property>
              <property name="text">
-              <string>Date de fin de simulation:</string>
+              <string>Date de fin:</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
              </property>
             </widget>
            </item>
-           <item row="7" column="1" colspan="2">
-            <widget class="QCheckBox" name="outputSHPLastDate">
+           <item row="7" column="0">
+            <widget class="QLabel" name="label_output_format">
              <property name="font">
               <font>
                <bold>false</bold>
               </font>
              </property>
              <property name="text">
-              <string>Shapefile de la dernière date</string>
+              <string>Format:</string>
              </property>
             </widget>
            </item>
-           <item row="3" column="1">
-            <widget class="QDateEdit" name="bdate">
+           <item row="4" column="0">
+            <widget class="QLabel" name="label_bdate_output">
+             <property name="font">
+              <font>
+               <bold>false</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>Date de début :</string>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="1">
+            <widget class="QCheckBox" name="outputSHP">
+             <property name="font">
+              <font>
+               <bold>false</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>Shapefile</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="3">
+            <widget class="QDateEdit" name="edate">
              <property name="enabled">
               <bool>true</bool>
              </property>
@@ -409,15 +331,75 @@
                <bold>false</bold>
               </font>
              </property>
-             <property name="minimumDate">
-              <date>
-               <year>1752</year>
-               <month>9</month>
-               <day>14</day>
-              </date>
-             </property>
              <property name="calendarPopup">
               <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="2">
+            <widget class="QCheckBox" name="outputCSV">
+             <property name="font">
+              <font>
+               <bold>false</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>CSV</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_result_type">
+             <property name="font">
+              <font>
+               <bold>false</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>Résultats:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1" colspan="3">
+            <widget class="QLineEdit" name="pathOutput">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="font">
+              <font>
+               <bold>false</bold>
+              </font>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="3">
+            <widget class="QCheckBox" name="outputKML">
+             <property name="font">
+              <font>
+               <bold>false</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>KML</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="4">
+            <widget class="QToolButton" name="btn_pathOutput">
+             <property name="text">
+              <string>...</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="label_frequence_display">
+             <property name="font">
+              <font>
+               <bold>false</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>Tous les </string>
              </property>
             </widget>
            </item>
@@ -433,20 +415,32 @@
              </property>
             </widget>
            </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_FREQUENCE_DISPLAY">
+           <item row="1" column="1">
+            <widget class="QRadioButton" name="lastdate">
              <property name="font">
               <font>
                <bold>false</bold>
               </font>
              </property>
              <property name="text">
-              <string>Fréquence de sortie:</string>
+              <string>Pour une date</string>
              </property>
             </widget>
            </item>
-           <item row="2" column="1">
-            <widget class="QSpinBox" name="FREQUENCE_DISPLAY">
+           <item row="1" column="2">
+            <widget class="QRadioButton" name="multidate">
+             <property name="font">
+              <font>
+               <bold>false</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>Pour une période</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QSpinBox" name="frequence_display">
              <property name="font">
               <font>
                <bold>false</bold>
@@ -462,22 +456,231 @@
         </item>
        </layout>
       </widget>
-     </widget>
-    </item>
-    <item row="0" column="1" alignment="Qt::AlignTop">
-     <widget class="QListWidget" name="listWidget">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>150</width>
-        <height>16777215</height>
-       </size>
-      </property>
+      <widget class="QWidget" name="page">
+       <layout class="QGridLayout" name="gridLayout_7">
+        <item row="0" column="1">
+         <widget class="QLabel" name="label_parcelFileName_2">
+          <property name="font">
+           <font>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Fichier environnemental:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QLabel" name="label_rainFileName_2">
+          <property name="font">
+           <font>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Précipitations:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="29" column="3">
+         <widget class="QPushButton" name="btn_cancel">
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>Annuler</string>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="3">
+         <widget class="QDateEdit" name="edate_2">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="font">
+           <font>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="calendarPopup">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="1">
+         <widget class="QLabel" name="label_pathOutput_2">
+          <property name="font">
+           <font>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Répertoire de sortie:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="29" column="1">
+         <widget class="QPushButton" name="btn_execute">
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>Executer</string>
+          </property>
+         </widget>
+        </item>
+        <item row="28" column="1">
+         <widget class="QLabel" name="label_output_format_2">
+          <property name="font">
+           <font>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Format:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="28" column="3">
+         <widget class="QLineEdit" name="output_format_2">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="1">
+         <widget class="QLabel" name="label_frequence_display_2">
+          <property name="font">
+           <font>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Tous les</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QLabel" name="label_tempFileName_2">
+          <property name="font">
+           <font>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Températures:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="3">
+         <widget class="QDateEdit" name="bdate_output_2">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="font">
+           <font>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="calendarPopup">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="1">
+         <widget class="QLabel" name="label_edate_2">
+          <property name="font">
+           <font>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Date de fin de simulation:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="1">
+         <widget class="QLabel" name="label_bdate_output_2">
+          <property name="font">
+           <font>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Date de début des sorties:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="4">
+         <widget class="QLineEdit" name="frequence_2">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="3" colspan="2">
+         <widget class="QLineEdit" name="parcelFileName_2">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="font">
+           <font>
+            <bold>false</bold>
+           </font>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="3" colspan="2">
+         <widget class="QLineEdit" name="rainFileName_2">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="font">
+           <font>
+            <bold>false</bold>
+           </font>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="3" colspan="2">
+         <widget class="QLineEdit" name="tempFileName_2">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="font">
+           <font>
+            <bold>false</bold>
+           </font>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="3" colspan="2">
+         <widget class="QLineEdit" name="pathOutput_2">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="font">
+           <font>
+            <bold>false</bold>
+           </font>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="3">
+         <widget class="QSpinBox" name="frequence_display_2">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
    </layout>

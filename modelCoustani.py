@@ -44,18 +44,18 @@ class ModelCoustani:
         # shp = gpd.read_file(parcelFileName) # le shapefile avec les parcelles
         self.shp = gpd.read_file(self.iface.parcelFileName.text()) # le shapefile avec les parcelles
 
-    def add_years(self,d):
-        """Return a date that's `years` years after the date (or datetime)
-        object `d`. Return the same calendar date (month and day) in the
-        destination year, if it exists, otherwise use the following day
-        (thus changing February 29 to March 1).
-
-        """
-        try:
-            # return d.replace(year = d.year + 1)
-            return d.addYears(1)
-        except ValueError:
-            return d + (date(d.year() + 1, 1, 1) - date(d.year(), 1, 1))
+    # def add_years(self,d):
+    #     """Return a date that's `years` years after the date (or datetime)
+    #     object `d`. Return the same calendar date (month and day) in the
+    #     destination year, if it exists, otherwise use the following day
+    #     (thus changing February 29 to March 1).
+    #
+    #     """
+    #     try:
+    #         # return d.replace(year = d.year + 1)
+    #         return d.addYears(1)
+    #     except ValueError:
+    #         return d + (date(d.year() + 1, 1, 1) - date(d.year(), 1, 1))
 
     def getOutputPath (self, bdate_output, format, oneDate):
         filename =  ntpath.basename(self.iface.parcelFileName.text()).split('.')[0]
@@ -68,12 +68,11 @@ class ModelCoustani:
     def getWeeklyRainValue(self,codeCommune,now,w):
         return self.rainCSVData.loc[(self.rainCSVData['CodeCommune'] == codeCommune) & (self.rainCSVData['numero_annee'] == now.year()) , w].values[0]
 
-    def initialisation(self):
+    def initialisation(self, bdate_output):
         # 2) Instanciation des datafacers : outputs
-        d = self.add_years(self.iface.bdate.date())
-        bdate_output = self.iface.bdate_output.date()
-        if d > bdate_output:
-            bdate_output = d # (test : il faut au moins 1 annee d'initialisation)
+        # d = self.add_years(self.iface.bdate.date())
+        # if d > bdate_output:
+        #     bdate_output = d # (test : il faut au moins 1 annee d'initialisation)
 
         # SHP 1 date
         # nomDeFichierShp1Date = self.iface.edate.date().toString("yyyyMMdd") +".shp"
@@ -94,7 +93,7 @@ class ModelCoustani:
         # plt = colorRange(10,"gyr")        # get list of colors from predefined pate "gyr"
         # kmlExport.defStyleRange("Atot_",1.0,plt,-0.2) # prefix, line thickness, list of colors , darken line color a little
         # kmlExport1.defStyleRange("Atot_",1.0,plt,-0.2) # prefix, line thickness, list of colors , darken line color a little
-        self.bdate_output = datetime.date(bdate_output.year(), 1, 1) # pour commencer les sorties au 1er janvier
+        # self.bdate_output = datetime.date(bdate_output.year(), 1, 1) # pour commencer les sorties au 1er janvier
 
         # # 4) Initialisation
         # print("Initialization ... ")
@@ -113,7 +112,7 @@ class ModelCoustani:
         self.shp["raincumul7"] = 0.0
         self.shp["rainday7"] = 0.0
 
-    def simulation(self,now,w,w7,day):
+    def simulation(self,now,w,w7,day,bdate_output,frequence_display):
         # now = self.iface.bdate.date()
         # fin = now
         # test_display = 0.0
@@ -130,8 +129,8 @@ class ModelCoustani:
             # w = self.getWeekNumber(now.weekNumber()[0])
             # self.iface.textEdit.append(now.toString("dd/MM/yyyy") + "; week " + w)
 
-        test_display = math.remainder(day,self.iface.FREQUENCE_DISPLAY.value())	# pour l'export des donnees tous les frequencedisplay jours
-        fin = now.addDays(self.iface.FREQUENCE_DISPLAY.value() - 1)
+        test_display = math.remainder(day,frequence_display)	# pour l'export des donnees tous les frequencedisplay jours
+        fin = now.addDays(frequence_display - 1)
 
             # Boucle sur les parcelles
         for index, row in self.shp.iterrows():
@@ -244,7 +243,8 @@ class ModelCoustani:
             devAh = 2 # taux de developpement des adultes en recherche d'hote
             devAem = 0.8 # taux de developement des adultes emergents
 
-            npastemps = int(1/self.iface.DT.value())
+            DT = 0.1
+            npastemps = int(1/DT)
 
             # initialisation
             x1 = row["oeufs"]
@@ -284,16 +284,16 @@ class ModelCoustani:
                 s1 = devAh*x8 - x9*(fma + fag)
                 t1 = fag*x9 - x10*(fmurma + fao)
 
-                x1 += self.iface.DT.value() * k1
-                x2 += self.iface.DT.value() * l1
-                x3 += self.iface.DT.value() * m1
-                x4 += self.iface.DT.value() * n1
-                x5 += self.iface.DT.value() * o1
-                x6 += self.iface.DT.value() * p1
-                x7 += self.iface.DT.value() * q1
-                x8 += self.iface.DT.value() * r1
-                x9 += self.iface.DT.value() * s1
-                x10 += self.iface.DT.value() * t1
+                x1 += DT * k1
+                x2 += DT * l1
+                x3 += DT * m1
+                x4 += DT * n1
+                x5 += DT * o1
+                x6 += DT * p1
+                x7 += DT * q1
+                x8 += DT * r1
+                x9 += DT * s1
+                x10 += DT * t1
 
                 # if shp.loc[index, "fokontany"] == "Ambahivahibe" :
                 #     print(str(y+1)+ ";" + str(x1) + ";"+str(x2) + ";"+str(x3)
@@ -330,7 +330,7 @@ class ModelCoustani:
 
             # if shp.loc[index, "fokontany"] == "Ambahivahibe" and w == "s01":
             #     print(str(shp.loc[index, "date_debut"] )+ ";" + str(x1))
-            if self.iface.outputKMLAllDates.isChecked() or self.iface.outputKMLLastDate.isChecked() and now > self.bdate_output and test_display == 0 :
+            if self.iface.outputKML.isChecked() and now > bdate_output and test_display == 0 :
                     # println("output KML")
             		# classifyAtot()
                     d = self.shp.loc[index, "adultestot"] / self.shp.loc[index, "SurfFktM2"] * 10000
@@ -356,7 +356,7 @@ class ModelCoustani:
 
                     # # outputKml (now, frequencedisplay, kmlExport)
                     styleAtot= "Atot_" + str(self.shp.loc[index, "Class"])
-                    _fin = now +  datetime.timedelta(days = self.iface.FREQUENCE_DISPLAY)
+                    _fin = now +  datetime.timedelta(days = frequence_display)
 
                     # kml.addGeometry ("An. coustani",styleAtot, now, _fin, geom, styleAtot,0)
                     self.shp.loc[index, "Name"] = "An. coustani"
@@ -378,17 +378,17 @@ class ModelCoustani:
 
     def exportResult(self,shp_list,kml_list):
         # # 5) Export KML
-        if self.iface.outputKMLAllDates.isChecked():
-            kml_list.to_file(self.kmlExport, driver='KML')
-
-        if self.iface.outputKMLLastDate.isChecked() :
-            self.shp.to_file(self.kmlExport1, driver='KML')
+        if self.iface.outputKML.isChecked():
+            if self.iface.multidate.isChecked():
+                kml_list.to_file(self.kmlExport, driver='KML')
+            else:
+                self.shp.to_file(self.kmlExport1, driver='KML')
 
         # 6) Export SHP
-        if self.iface.outputSHPAllDates.isChecked():
-            shp_list = shp_list.loc[:,shp_list.columns.isin(["geometry","mdg_com_co", "mdg_fkt_co", "fokontany","date_debut","date_fin","oeufs","larves","nymphes","ah","adultestot"])]
-            shp_list.to_file(self.shpout, driver='ESRI Shapefile')
-
-        if self.iface.outputSHPLastDate.isChecked() :
-            self.shp= self.shp.loc[:,self.shp.columns.isin(["geometry","mdg_com_co", "mdg_fkt_co", "fokontany","date_debut","date_fin","oeufs","larves","nymphes","ah","adultestot"])]
-            self.shp.to_file(self.shpout1, driver='ESRI Shapefile')
+        if self.iface.outputSHP.isChecked():
+            if self.iface.multidate.isChecked():
+                shp_list = shp_list.loc[:,shp_list.columns.isin(["geometry","mdg_com_co", "mdg_fkt_co", "fokontany","date_debut","date_fin","oeufs","larves","nymphes","ah","adultestot"])]
+                shp_list.to_file(self.shpout, driver='ESRI Shapefile')
+            else:
+                self.shp= self.shp.loc[:,self.shp.columns.isin(["geometry","mdg_com_co", "mdg_fkt_co", "fokontany","date_debut","date_fin","oeufs","larves","nymphes","ah","adultestot"])]
+                self.shp.to_file(self.shpout1, driver='ESRI Shapefile')

@@ -15,13 +15,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_rainFileName.clicked.connect(lambda : self.selectInputFile(self.rainFileName,"*.csv"))
         self.btn_tempFileName.clicked.connect(lambda : self.selectInputFile(self.tempFileName,"*.csv"))
         self.btn_load.clicked.connect(self.load)
+        self.btn_clear.clicked.connect(self.clear)
         self.listWidget.itemSelectionChanged.connect(self.next)
         self.btn_pathOutput.clicked.connect(self.selectOutputDir)
-
-        # self.btn_next.clicked.connect(self.next)
-        # self.btn_back.clicked.connect(self.previous)
-
-
+        self.btn_execute.clicked.connect(self.run_model)
+        self.btn_cancel.clicked.connect(self.cancel)
+        self.cancel = False
 
         menu = ["Paramètres d'entrées", "Paramètres de sortie", "Exécuter"]
         columns = ["Paramètres KL", "Précipitations", "Températures"]
@@ -30,6 +29,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                                             "Surface des cultures agricoles (m2)",
                                             "Surface des rizières (m2)",
                                             "Surface totale (m2)"]
+        frequence_display = ["jours", "mois"]
 
         self.listWidget.addItems(menu)
         self.columnCount = len(columns)
@@ -38,6 +38,29 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tableWidget.setRowCount(self.rowCount)
         self.tableWidget.setHorizontalHeaderLabels(columns)
         self.tableWidget.setVerticalHeaderLabels(rows)
+
+        self.frequence.addItems(frequence_display)
+        self.lastdate.toggled.connect(lambda:self.btnstate(self.lastdate))
+        self.multidate.toggled.connect(lambda:self.btnstate(self.multidate))
+        self.lastdate.setChecked(True)
+
+    def btnstate(self,b):
+
+      if b.text() == "Pour une date":
+         if b.isChecked() :
+            self.frequence_display.setEnabled(False)
+            self.frequence.setEnabled(False)
+            self.bdate_output.setEnabled(False)
+         else:
+            self.multidate.setChecked(True)
+
+      if b.text() == "Pour une période":
+         if b.isChecked() :
+            self.frequence_display.setEnabled(True)
+            self.frequence.setEnabled(True)
+            self.bdate_output.setEnabled(True)
+         else:
+            self.lastdate.setChecked(True)
 
     def selectInputFile(self, input, extension):
         path, _filter = QFileDialog.getOpenFileName(
@@ -75,7 +98,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             return True
 
     def anyCheckedFormat(self):
-        if self.outputSHPAllDates.isChecked() or self.outputKMLAllDates.isChecked() or self.outputKMLLastDate.isChecked() or self.outputSHPLastDate.isChecked():
+        if self.outputSHP.isChecked() or self.outputKML.isChecked() or self.outputCSV.isChecked() :
             return False
         else:
             self.label_output_format.setStyleSheet("color: red")
@@ -86,6 +109,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.pageInd -= 1
             self.stackedWidget.setCurrentIndex(self.pageInd)
 
+    def clear(self):
+        self.parcelFileName.clear()
+        self.rainFileName.clear()
+        self.tempFileName.clear()
+        self.groupBoxInputParam.setEnabled(True)
+        self.tableWidget.setEnabled(False)
+
     def load(self):
         if self.EmptyLineEdit(self.parcelFileName) or self.EmptyLineEdit(self.rainFileName) or self.EmptyLineEdit(self.tempFileName):
             button = QMessageBox.information(
@@ -94,6 +124,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 "Remplir les champs requis",
                 )
         else:
+            self.tableWidget.setEnabled(True)
+            self.groupBoxInputParam.setEnabled(False)
+
             # 1) Instanciation des datafacers : inputs
             # 2) Instanciation des datafacers : outputs
             self.textEdit.setText("Model ModeleCoustani ready to run")
@@ -109,10 +142,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             environment_fields = self.model.shp.columns
             precip_fields = self.model.rainCSVData.columns
-            temp_fields = self.model.tempCSVData
-
-            self.groupBoxInputParam.setEnabled(False)
-            self.tableWidget.setEnabled(True)
+            temp_fields = self.model.tempCSVData.columns
 
             for row in range(self.rowCount):
                 for col in range (self.columnCount):
@@ -125,7 +155,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     elif col == 0:
                         field_name.addItems(environment_fields)
                     elif row == 2:
-                        field_name.addItems(["journalier","hebdomadaire"])
+                        field_name.addItems(["journalier","hebdomadaire", "mensuel"])
                     elif col == 1:
                         field_name.addItems(precip_fields)
                     else:
@@ -136,28 +166,36 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             bdate_min = self.model.tempCSVData['numero_annee'].min()
             bdate_max = self.model.tempCSVData['numero_annee'].max()
             bdate_output_max = QtCore.QDate(bdate_max,12,31)
-            self.bdate.setMinimumDate(QtCore.QDate(bdate_min,1,1))
-            self.bdate.setMaximumDate(QtCore.QDate(bdate_max,12,31))
+            # self.bdate.setMinimumDate(QtCore.QDate(bdate_min,1,1))
+            # self.bdate.setMaximumDate(QtCore.QDate(bdate_max,12,31))
             self.bdate_output.setMinimumDate(QtCore.QDate(bdate_min+1,1,1))
             self.bdate_output.setMaximumDate(bdate_output_max)
             self.edate.setMinimumDate(QtCore.QDate(bdate_min+1,1,1))
             self.edate.setMaximumDate(bdate_output_max)
 
     def kl_param_error(self):
-        for col in range(self.columnCount):
-            list_selected_field = []
-            for row in range(self.rowCount):
-                field_name = self.tableWidget.cellWidget(row,col)
-                if field_name.metaObject().className() == "QComboBox" :
-                    list_selected_field.append(field_name.currentText())
-            if len(list_selected_field) != len(set(list_selected_field)):
-                button = QMessageBox.information(
-                    self.centralwidget,
-                    "Erreur",
-                    "Choisir des différents valeurs pour la colonne " + str(col+1),
-                    )
-                return True
-        return False
+        if self.groupBoxInputParam.isEnabled():
+            button = QMessageBox.information(
+                self.centralwidget,
+                "Erreur",
+                "Remplir les noms des fichiers d'entrées puis cliquer sur charger",
+                )
+            return True
+        else:
+            for col in range(self.columnCount):
+                list_selected_field = []
+                for row in range(self.rowCount):
+                    field_name = self.tableWidget.cellWidget(row,col)
+                    if field_name.metaObject().className() == "QComboBox" :
+                        list_selected_field.append(field_name.currentText())
+                if len(list_selected_field) != len(set(list_selected_field)):
+                    button = QMessageBox.information(
+                        self.centralwidget,
+                        "Erreur",
+                        "Choisir des différents valeurs pour la colonne " + str(col+1),
+                        )
+                    return True
+            return False
 
     def next(self):
         i = self.listWidget.currentRow()
@@ -166,69 +204,94 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         if i == 1:
             # verifier paramètres KL
-            if self.EmptyLineEdit(self.parcelFileName) or self.EmptyLineEdit(self.rainFileName) or self.EmptyLineEdit(self.tempFileName):
-                button = QMessageBox.information(
-                    self.centralwidget,
-                    "Erreur",
-                    "Remplir les champs requis",
-                    )
-                self.listWidget.setCurrentRow(0)
-            elif self.kl_param_error():
+            if self.kl_param_error():
                 self.listWidget.setCurrentRow(0)
             else:
                 self.stackedWidget.setCurrentIndex(1)
 
-
         if i == 2 :
-            if self.stackedWidget.currentIndex() == 0:
-                # button = QMessageBox.information(
-                #     self.centralwidget,
-                #     "Erreur",
-                #     "Remplir les paramètres d'entrées",
-                #     )
-                self.listWidget.setCurrentRow(0)
-            elif self.EmptyLineEdit(self.pathOutput) or self.anyCheckedFormat():
-                button = QMessageBox.information(
-                    self.centralwidget,
-                    "Erreur",
-                    "Remplir les champs requis",
-                    )
+            if self.EmptyLineEdit(self.pathOutput) or self.anyCheckedFormat():
+                if self.kl_param_error():
+                    self.listWidget.setCurrentRow(0)
+                else:
+                    self.listWidget.setCurrentRow(1)
+                    self.stackedWidget.setCurrentIndex(1)
+                    button = QMessageBox.information(
+                        self.centralwidget,
+                        "Erreur",
+                        "Remplir les champs requis",
+                        )
             else:
-                # self.btn_next.setEnabled(False)
-                # # 4) Initialisation
-                self.textEdit.append("Initialization ... ")
-                self.model.initialisation()
+                self.stackedWidget.setCurrentIndex(2)
+                self.parcelFileName_2.setText(self.parcelFileName.text())
+                self.rainFileName_2.setText(self.rainFileName.text())
+                self.tempFileName_2.setText(self.tempFileName.text())
+                self.pathOutput_2.setText(self.pathOutput.text())
+                self.frequence_display_2.setValue(self.frequence_display.value())
+                self.frequence_2.setText(self.frequence.currentText())
+                # self.bdate_2.setDate(self.bdate.date())
+                self.bdate_output_2.setDate(self.bdate_output.date())
+                self.edate_2.setDate(self.edate.date())
+                output_format = ""
+                if self.outputSHP.isChecked() :
+                    output_format = "".join([output_format,self.outputSHP.text(),";"])
+                if self.outputKML.isChecked() :
+                    output_format = "".join([output_format,self.outputKML.text(),";"])
+                if self.outputCSV.isChecked() :
+                    output_format = "".join([output_format,self.outputCSV.text(),";"])
+                self.output_format_2.setText(output_format)
 
-                # # 5) Simulation
-                now = self.bdate.date()
-                day = 0
-                self.textEdit.append("Simulation start: "+ self.bdate.date().toString("dd/MM/yyyy"))
+    def cancel(self):
+        self.cancel = True
 
-                # fin = now
-                # test_display = 0.0
-                shp_list = gpd.GeoDataFrame()
-                kml_list = gpd.GeoDataFrame()
-                # # Boucle sur les jours
-                while now < self.edate.date():
-                    w = self.getWeekNumber(now.weekNumber()[0])
-                    self.textEdit.append(now.toString("dd/MM/yyyy") + "; week " + w)
-                    QtCore.QCoreApplication.processEvents()
+    def run_model(self):
+        reply = QMessageBox.question(
+            self.centralwidget,
+            "Question ...",
+            "Voulez vous lancer le modèle",
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            # # 4) Initialisation
+            self.textEdit.append("Initialization ... ")
+            bdate_output = self.bdate_output.date()
+            self.model.initialisation(bdate_output)
 
-                    w7 = self.getWeekNumber(now.addDays(-7).weekNumber()[0])
-                    # test_display = math.remainder(day,self.FREQUENCE_DISPLAY.value())	# pour l'export des donnees tous les frequencedisplay jours
-                    # fin = now.addDays(self.FREQUENCE_DISPLAY.value() - 1)
+            # # 5) Simulation
+            bdate = bdate_output.addYears(-1)
+            self.textEdit.append("Simulation start: "+ bdate.toString("dd/MM/yyyy"))
 
-                    # Boucle sur les parcelles
-                    test_display = self.model.simulation(now,w,w7,day)
-                    if now > self.model.bdate_output and test_display == 0 :
-                        if self.outputKMLAllDates.isChecked() :
-                            kml_list = pd.concat([kml_list,self.model.shp],ignore_index = True)
-                        if self.outputSHPAllDates.isChecked():
-                            shp_list = pd.concat([shp_list,self.model.shp], ignore_index = True)
-                    day += 1
-                    now = now.addDays(1)
-                    # Fin de la boucle sur les jours
+            # fin = now
+            # test_display = 0.0
+            shp_list = gpd.GeoDataFrame()
+            kml_list = gpd.GeoDataFrame()
+            now = bdate
+            day = 0
+            # # Boucle sur les jours
+            while now < self.edate.date() and not self.cancel:
+                w = self.getWeekNumber(now.weekNumber()[0])
+                self.textEdit.append(now.toString("dd/MM/yyyy") + "; week " + w)
+                QtCore.QCoreApplication.processEvents()
 
+                w7 = self.getWeekNumber(now.addDays(-7).weekNumber()[0])
+                # test_display = math.remainder(day,self.FREQUENCE_DISPLAY.value())	# pour l'export des donnees tous les frequencedisplay jours
+                # fin = now.addDays(self.FREQUENCE_DISPLAY.value() - 1)
+
+                # Boucle sur les parcelles
+                days = 1
+                if self.frequence.currentIndex() == 1 :
+                    days = 30
+                frequence_display = self.frequence_display.value() * days
+                test_display = self.model.simulation(now,w,w7,day,bdate_output,frequence_display)
+                if now > bdate_output and test_display == 0 :
+                    if self.outputKML.isChecked() and self.multidate.isChecked():
+                        kml_list = pd.concat([kml_list,self.model.shp],ignore_index = True)
+                    if self.outputSHP.isChecked() and self.multidate.isChecked():
+                        shp_list = pd.concat([shp_list,self.model.shp], ignore_index = True)
+                day += 1
+                now = now.addDays(1)
+                # Fin de la boucle sur les jours
+
+            if not self.cancel:
                 # # 5) Export KML
                 self.model.exportResult(shp_list,kml_list)
                 button = QMessageBox.information(
@@ -236,7 +299,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     "Status",
                     "Simulation terminee !",
                     )
-                # self.btn_next.setEnabled(True)
+            else:
+                button = QMessageBox.information(
+                    self.centralwidget,
+                    "Status",
+                    "Simulation interrompue !",
+                    )
+                self.cancel = False
+
 
 def main():
     app = QApplication(sys.argv)
