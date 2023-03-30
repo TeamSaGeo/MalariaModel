@@ -14,24 +14,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_parcelFileName.clicked.connect(lambda : self.selectInputFile(self.parcelFileName, "*.shp"))
         self.btn_rainFileName.clicked.connect(lambda : self.selectInputFile(self.rainFileName,"*.csv"))
         self.btn_tempFileName.clicked.connect(lambda : self.selectInputFile(self.tempFileName,"*.csv"))
-        self.btn_load.clicked.connect(self.load)
-        self.btn_clear.clicked.connect(self.clear)
+        # self.btn_load.clicked.connect(self.load)
+        # self.btn_clear.clicked.connect(self.clear)
         self.listWidget.itemSelectionChanged.connect(self.next)
         self.btn_pathOutput.clicked.connect(self.selectOutputDir)
         self.btn_execute.clicked.connect(self.run_model)
         self.btn_cancel.clicked.connect(self.cancel)
         self.cancel = False
 
-        menu = ["Paramètres d'entrées", "Paramètres de sortie", "Exécuter"]
-        columns = ["Paramètres KL", "Précipitations", "Températures"]
-        rows = ["Lieu","Année","Type de données","Surface des plans d'eau (m2)",
-                                            "Surface des rivieres (m2)",
-                                            "Surface des cultures agricoles (m2)",
-                                            "Surface des rizières (m2)",
-                                            "Surface totale (m2)"]
-        frequence_display = ["jours", "mois"]
-
+        menu = ["Fichiers d'entrées", "Paramètres KL", "Paramètres de sortie", "Exécuter"]
         self.listWidget.addItems(menu)
+
+        rows_gite_larvaires = ["Lieu","Surface des plans d'eau (m2)","Surface des rivieres (m2)","Surface des cultures agricoles (m2)",
+                                "Surface des rizières (m2)","Surface totale (m2)"]
+        self.table_gites.setColumnCount(1)
+        self.table_gites.setRowCount(len(rows_gite_larvaires))
+        self.table_gites.setHorizontalHeaderLabels(["Gîte larvaire"])
+        self.table_gites.setVerticalHeaderLabels(rows_gite_larvaires)
+
+        columns = ["Précipitations", "Températures"]
+        rows = ["Lieu", "Année","Type de données"]
         self.columnCount = len(columns)
         self.rowCount = len(rows)
         self.tableWidget.setColumnCount(self.columnCount)
@@ -39,6 +41,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tableWidget.setHorizontalHeaderLabels(columns)
         self.tableWidget.setVerticalHeaderLabels(rows)
 
+        frequence_display = ["jours", "mois"]
         self.frequence.addItems(frequence_display)
         self.lastdate.toggled.connect(lambda:self.btnstate(self.lastdate))
         self.multidate.toggled.connect(lambda:self.btnstate(self.multidate))
@@ -115,6 +118,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tempFileName.clear()
         self.groupBoxInputParam.setEnabled(True)
         self.tableWidget.setEnabled(False)
+        self.table_gites.setEnabled(False)
 
     def load(self):
         if self.EmptyLineEdit(self.parcelFileName) or self.EmptyLineEdit(self.rainFileName) or self.EmptyLineEdit(self.tempFileName):
@@ -123,8 +127,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 "Erreur",
                 "Remplir les champs requis",
                 )
+            self.listWidget.setCurrentRow(0)
         else:
+            # self.pageInd += 1
+            self.listWidget.setCurrentRow(1)
+            self.stackedWidget.setCurrentIndex(1)
             self.tableWidget.setEnabled(True)
+            self.table_gites.setEnabled(True)
+
             self.groupBoxInputParam.setEnabled(False)
 
             # 1) Instanciation des datafacers : inputs
@@ -148,20 +158,35 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 for col in range (self.columnCount):
                     field_name = QComboBox()
 
-                    if ((row == 1 or row == 2) and col == 0) or (row >= 3 and col >= 1):
-                        field_name = QLineEdit()
-                        field_name.setEnabled(False)
+                    # if ((row == 1 or row == 2) and col == 0) or (row >= 3 and col >= 1):
+                    #     field_name = QLineEdit()
+                    #     field_name.setEnabled(False)
 
-                    elif col == 0:
-                        field_name.addItems(environment_fields)
-                    elif row == 2:
-                        field_name.addItems(["journalier","hebdomadaire", "mensuel"])
-                    elif col == 1:
-                        field_name.addItems(precip_fields)
+                    # elif col == 0:
+                    #     field_name.addItems(environment_fields)
+                    # elif row == 2:
+                    #     field_name.addItems(["journalier","hebdomadaire", "mensuel"])
+                    # elif col == 1:
+                    #     field_name.addItems(precip_fields)
+                    # else:
+                    #     field_name.addItems(temp_fields)
+
+                    if row <= 1:
+                        if col == 0:
+                            field_name.addItems(precip_fields)
+                        else:
+                            field_name.addItems(temp_fields)
                     else:
-                        field_name.addItems(temp_fields)
+                        field_name.addItems(["journalier","hebdomadaire", "mensuel"])
+
 
                     self.tableWidget.setCellWidget(row, col, field_name)
+
+            for row in range(self.table_gites.rowCount()):
+                for col in range (self.table_gites.columnCount()):
+                    field_name = QComboBox()
+                    field_name.addItems(environment_fields)
+                    self.table_gites.setCellWidget(row, col, field_name)
 
             bdate_min = self.model.tempCSVData['numero_annee'].min()
             bdate_max = self.model.tempCSVData['numero_annee'].max()
@@ -203,26 +228,30 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.stackedWidget.setCurrentIndex(0)
 
         if i == 1:
+            self.load()
+
+        if i == 2:
             # verifier paramètres KL
             if self.kl_param_error():
-                self.listWidget.setCurrentRow(0)
+                self.listWidget.setCurrentRow(1)
             else:
-                self.stackedWidget.setCurrentIndex(1)
+                self.listWidget.setCurrentRow(2)
+                self.stackedWidget.setCurrentIndex(2)
 
-        if i == 2 :
+        if i == 3 :
             if self.EmptyLineEdit(self.pathOutput) or self.anyCheckedFormat():
                 if self.kl_param_error():
-                    self.listWidget.setCurrentRow(0)
-                else:
                     self.listWidget.setCurrentRow(1)
-                    self.stackedWidget.setCurrentIndex(1)
+                else:
+                    self.listWidget.setCurrentRow(2)
+                    self.stackedWidget.setCurrentIndex(2)
                     button = QMessageBox.information(
                         self.centralwidget,
                         "Erreur",
                         "Remplir les champs requis",
                         )
             else:
-                self.stackedWidget.setCurrentIndex(2)
+                self.stackedWidget.setCurrentIndex(3)
                 self.parcelFileName_2.setText(self.parcelFileName.text())
                 self.rainFileName_2.setText(self.rainFileName.text())
                 self.tempFileName_2.setText(self.tempFileName.text())
@@ -267,7 +296,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             now = bdate
             day = 0
             # # Boucle sur les jours
-            while now < self.edate.date() and not self.cancel:
+            while now <= self.edate.date() and not self.cancel:
                 w = self.getWeekNumber(now.weekNumber()[0])
                 self.textEdit.append(now.toString("dd/MM/yyyy") + "; week " + w)
                 QtCore.QCoreApplication.processEvents()
@@ -285,7 +314,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 if now > bdate_output and test_display == 0 :
                     if self.outputKML.isChecked() and self.multidate.isChecked():
                         kml_list = pd.concat([kml_list,self.model.shp],ignore_index = True)
-                    if self.outputSHP.isChecked() and self.multidate.isChecked():
+                    if (self.outputSHP.isChecked() or self.outputCSV.isChecked()) and self.multidate.isChecked():
                         shp_list = pd.concat([shp_list,self.model.shp], ignore_index = True)
                 day += 1
                 now = now.addDays(1)
