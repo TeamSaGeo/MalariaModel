@@ -1,51 +1,42 @@
-import os
-import datetime
-import pandas as pd
-import geopandas as gpd
 import math
+import datetime
 import fiona
-import ntpath
 
-class ModelCoustani:
-    def __init__(self, iface):
-        fiona.supported_drivers['KML'] = 'rw'
-        self.iface = iface
+class SEIRModel:
+    def __init__(self,filename,shp,rainCSVData,tempCSVData):
+        self.filename = filename
+        self.shp = shp
+        self.rainCSVData = rainCSVData
+        self.tempCSVData = tempCSVData
+        self.shpExport = ""
+        self.csvExport = ""
+        self.kmlExport = ""
 
-        # 1) Instanciation des datafacers : inputs
-        # Donnees meteo
-        self.rainCSVData = pd.read_csv(self.iface.rainFileName.text(),delimiter=";")# le fichier texte (csv) avec les donnees Meteo : pluies
-        self.tempCSVData = pd.read_csv(self.iface.tempFileName.text(),delimiter=";") # le fichier texte (csv) avec les donnees Meteo : temperatures
-        # # Parcelles
-        self.shp = gpd.read_file(self.iface.parcelFileName.text()) # le shapefile avec les parcelles
+    def getDateMin(self,field):
+        return self.tempCSVData[field].min() + 1 # L'année suivant l'année minimum
 
-    def getOutputPath (self, bdate_output, format, oneDate):
-        filename =  ntpath.basename(self.iface.parcelFileName.text()).split('.')[0]
-        extension = self.iface.edate.date().toString("yyyyMMdd") + format
-        if oneDate:
-            filename += extension
-        else:
-            filename += bdate_output.toString("yyyyMMdd_") + extension
-        return os.path.join(self.iface.pathOutput.text(),filename)
+    def getDateMax(self,field):
+        return self.tempCSVData[field].max()
 
-    def getWeeklyRainValue(self,codeCommune,now,w):
-        return self.rainCSVData.loc[(self.rainCSVData['CodeCommune'] == codeCommune) & (self.rainCSVData['numero_annee'] == now.year()) , w].values[0]
+    def setShpExport(self,path):
+        self.shpExport = path
 
-    def initialisation(self, bdate_output):
-        # 2) Instanciation des datafacers : outputs
-        # SHP 1 date
-        self.shpout1 = self.getOutputPath(bdate_output, ".shp", True)
-        # SHP multidates
-        self.shpout = self.getOutputPath(bdate_output, ".shp", False) 	# le fichier ShapeFile en sortie : toutes les dates
-        # KML 1 date
-        self.kmlExport1 = self.getOutputPath(bdate_output, ".kml", True)
-        # KML multidates
-        self.kmlExport = self.getOutputPath(bdate_output, ".kml", False)
-        # CSV 1 date
-        self.csvExport1 = self.getOutputPath(bdate_output, ".csv", True)
-        # CSV multidates
-        self.csvExport = self.getOutputPath(bdate_output, ".csv", False)
+    def setCsvExport(self,path):
+        self.csvExport = path
 
-        # # 4) Initialisation
+    def setKmlExport(self,path):
+        self.kmlExport = path
+
+    def setFrequence_display(self,frequence_display):
+        self.frequence_display = frequence_display
+
+    def setBDateOutput(self, bdate_output, minimumDate):
+        self.bdate_output = bdate_output
+        self.bdate = self.bdate_output.addYears(-1)
+        if self.bdate < minimumDate:
+            self.bdate = minimumDate
+
+    def initialisation(self, paramKL):
         self.shp["oeufs"] = 10000000.0
         self.shp["larves"] = 0.0
         self.shp["nymphes"] = 0.0
@@ -56,20 +47,59 @@ class ModelCoustani:
         self.shp["a2h"] = 0.0
         self.shp["a2g"] = 0.0
         self.shp["a2o"] = 0.0
+        self.shp["ahE"] = 0.0
+        self.shp["ahI"] = 0.0
+        self.shp["humS"] = self.shp[paramKL[6]]
+        self.shp["humE"] = 0.0
+        self.shp["humI"] = 0.0
+        self.shp["humR"] = 0.0
         self.shp["rain7"] = 0.0
         self.shp["raincumul7"] = 0.0
         self.shp["rainday7"] = 0.0
 
-    def simulation(self,now,w,w7,day,bdate_output,frequence_display):
-        test_display = math.remainder(day,frequence_display)	# pour l'export des donnees tous les frequencedisplay jours
-        fin = now.addDays(frequence_display - 1)
+    def getWeeklyRainValue(self,paramMeteo,lieu,now,w):
+        return self.rainCSVData.loc[(self.rainCSVData[paramMeteo[0][0]] == lieu) & (self.rainCSVData[paramMeteo[0][1]] == now.year()) , w].values[0]
 
-        # Boucle sur les parcelles
+    def getWeeklyTemperatureValue(self,paramMeteo,lieu,now,w):
+        return self.tempCSVData.loc[(self.tempCSVData[paramMeteo[1][0]] == lieu) & (self.tempCSVData[paramMeteo[1][1]] == now.year()) , w].values[0]
+
+    def simulation(self,now,w,w7,day,paramKL,paramMeteo,date_intro):
+        test_display = math.remainder(day,self.frequence_display)	# pour l'export des donnees tous les frequencedisplay jours
+        fin = now.addDays(self.frequence_display - 1)
+
+        TE = 12.9
+        TDDE = 28.55 # 26.6
+        fegg = 0.0
+        TAg = 9.9
+        TDDAg = 36.5
+        fao = 2.0 # fAo
+        fme = 0.1 # Taux de mortalite des oeufs
+        mur = 0.08 # taux de mortalité additionnelle du comportement de recherche (d'hôtes et de sites de ponte)
+        raincumul7min = 0.0	# Précipitation par semaine minimum
+        raincumul7max = 322.87	# 322.88 Précipitation par semaine maximum
+        tempmin = 16	# Température minimale de survie des Plasmodium
+        # dynpop
+        # Les parametres du modele
+        b1 = 65 # 72 nombre moyen d'oeufs des nullipares
+        b2 = 93 # 96 nombre moyen d'oeufs des pares
+        sexr = 0.72  # 0.7 sex ratio
+        muPem = 0.1     # taux de mortalite à l'emergence (des P)
+        devAh = 2 # taux de developpement des adultes en recherche d'hote
+        devAem = 0.8 # taux de developement des adultes emergents
+        mui = 0.08	# taux de mortalité Anopheles infectés (hypothèse ==> même que mur)
+
+        om1 = 0.533	# taux d'infection chez les humains (omega 1)
+        om2 = 0.09	# taux d'infection chez les Anopheles (omega 2)
+        ph = 0.00136	# taux de perte de l'immunité (phi h)
+        th = 0.0714 # 1/14	// taux d'incubation chez les humains (teta h)
+        gh = 0.143 # 1/6.9(Wadjo, 2020) 0.005	// taux de guérison (gamma h) - a verifier
+        DT = 0.1
+        npastemps = int(1/DT)
+
         for index, row in self.shp.iterrows():
             # Read Meteo
-            codeCommune = row["mdg_com_co"]
-            rain = self.getWeeklyRainValue(codeCommune,now,w) / 7
-            temperature = self.tempCSVData.loc[(self.tempCSVData['CodeCommune'] == codeCommune) & (self.tempCSVData['numero_annee'] == now.year()) , w].values[0]
+            lieu = row[paramKL[0]]
+            temperature = self.getWeeklyTemperatureValue(paramMeteo,lieu,now,w)
             # w7 = self.getWeekNumber(now.addDays(-7).weekNumber()[0])
             # if w7 == "s53" :
             #     # try :
@@ -79,14 +109,12 @@ class ModelCoustani:
             #     rain7 = self.getWeeklyRainValue(codeCommune,now,"s52") / 7
             #     raincumul7 = self.getWeeklyRainValue(codeCommune,now,"s52")
             # else:
-            rain7 = self.getWeeklyRainValue(codeCommune,now,w7) / 7
-            raincumul7 =  self.getWeeklyRainValue(codeCommune,now,w7)
+            rain = self.getWeeklyRainValue(paramMeteo,lieu,now,w) / 7
+            raincumul7 = self.getWeeklyRainValue(paramMeteo,lieu,now,w7)
+            rain7 = raincumul7 / 7
 
             # Updatefunction
             # Egg development
-            TE = 12.9
-            TDDE = 26.6
-            fegg = 0.0
             if temperature > TE :
                 fegg1 = (temperature - TE)
                 fegg = fegg1 / TDDE
@@ -104,17 +132,9 @@ class ModelCoustani:
             flarvae = fpupae/4
 
             # fAg
-            TAg = 9.9
-            TDDAg = 36.5
             if temperature > TAg :
                 fag1= temperature - TAg
                 fag = fag1 / TDDAg
-
-            # fAo
-            fao = 2.0
-
-            # Taux de mortalite des oeufs
-            fme = 0.1
 
             # Taux de mortalite des larves
             fml1 = math.exp(-temperature/2)
@@ -130,7 +150,6 @@ class ModelCoustani:
                 fma=0.033
 
             # Taux de mortalite en recherche d'hote
-            mur = 0.08         # taux de mortalité additionnelle du comportement de recherche (d'hôtes et de sites de ponte)
             fmurma = fma + mur
 
             # capacite du milieu en larves
@@ -139,11 +158,16 @@ class ModelCoustani:
             # surfCult = row["CultAgriM2"] if not math.isnan(row["CultAgriM2"]) else 0
             # surfEau = row["PlanDeauM2"] if not math.isnan(row["PlanDeauM2"]) else 0
             # surfRiz = row["RizieresM2"] if not math.isnan(row["RizieresM2"]) else 0
-            surfRiv = row["RivieresM2"]
-            surfCult = row["CultAgriM2"]
-            surfEau = row["PlanDeauM2"]
-            surfRiz = row["RizieresM2"]
 
+            surfEau = row[paramKL[1]]
+            surfRiv = row[paramKL[2]]
+            surfCult = row[paramKL[3]]
+            surfRiz = row[paramKL[4]]
+            surfTot = row[paramKL[5]]
+            # surfSettlement = row[paramKL[6]]
+            nbrepop= row[paramKL[6]]
+
+            # Si les valeurs des gites larvaires sont nulles alors les valeurs des paramètres KL seront nulles
             klvarRiv = int(surfRiv * 1914 * 0.9)  if not math.isnan(surfRiv) else surfRiv # 1914 larves/m2 ==> nombre de larves d'Anopheles max par m2
             klfixRiv = int(surfRiv * 1914 * 0.1) if not math.isnan(surfRiv) else surfRiv
             klvarCult = int(surfCult * 1914 * 0.9) if not math.isnan(surfCult) else surfCult
@@ -158,8 +182,6 @@ class ModelCoustani:
             	klfixRiz = int(surfRiz * 1914.0) if not math.isnan(surfRiz) else surfRiz
             	klvarRiz = 0.0
 
-            raincumul7min = 0.0	# Précipitation par semaine minimum
-            raincumul7max = 322.88	# Précipitation par semaine maximum
             pnorm = (raincumul7 - raincumul7min) / (raincumul7max - raincumul7min)	# normalisation des précipitations par semaine
             # fkl = kl.doubleValue()
 
@@ -169,18 +191,15 @@ class ModelCoustani:
             fkl = klfix + min(klvar * pnorm, klvar) # Calcul capacité de charge
 
             fkp = fkl
+            # Taux d'incubation chez les Anopheles
+            fia = (temperature + tempmin)/111
 
-            # dynpop
-            # Les parametres du modele
-            b1 = 72 # nombre moyen d'oeufs des nullipares
-            b2 = 96 # nombre moyen d'oeufs des pares
-            sexr = 0.7  # sex ratio
-            muPem = 0.1     # taux de mortalite à l'emergence (des P)
-            devAh = 2 # taux de developpement des adultes en recherche d'hote
-            devAem = 0.8 # taux de developement des adultes emergents
-
-            DT = 0.1
-            npastemps = int(1/DT)
+            # c = surfSettlement/surfTot
+            c = 0.01 # example
+            try:
+                tp = self.shp.loc[index, "ah"]/self.shp.loc[index, "adultestot"]	# taux de piqûre
+            except :
+                tp = 0
 
             # initialisation
             x1 = row["oeufs"]
@@ -193,17 +212,20 @@ class ModelCoustani:
             x8 = row["a2h"]
             x9 = row["a2g"]
             x10 = row["a2o"]
+            x11aE = row["ahE"]
+            x11aI = row["ahI"]
+            # if  (date_intro - now.toPyDate()).days == 0 :
+            if  now.daysTo(date_intro) == 0:
+                x12I = 1.0 # Nbre de personne initialement infecté
+                x12S = row["humS"] - 1.0
+                print ("introduction d'un cas de paludisme " + str(x12I), str(x12S))
+            else:
+                x12I = row["humI"]
+                x12S = row["humS"]
+            x12E = row["humE"]
+            x12R = row["humR"]
 
-            k1 = 0.0
-            l1 = 0.0
-            m1 = 0.0
-            n1 = 0.0
-            o1 = 0.0
-            p1 = 0.0
-            q1 = 0.0
-            r1 = 0.0
-            s1 = 0.0
-            t1 = 0.0
+            k1 = l1 = m1 = n1 = o1 = p1 = q1 = r1 = s1 = t1 = u1 = u2 = v1 = v2 = v3 = v4 = 0.0
 
             # Resolution des equations
             for y in range(0,npastemps) :
@@ -223,6 +245,14 @@ class ModelCoustani:
                 s1 = devAh*x8 - x9*(fma + fag)
                 t1 = fag*x9 - x10*(fmurma + fao)
 
+                u1 = om2*x12I*(x5+x8)/nbrepop*0.2 - x11aE*(fma + fia)	# équation de aE // rq AT : pas besoin de tp
+                u2 = fia*x11aE - x11aI*(fma + mui)	# résolution de a1
+                v1 = ph*x12R - x12S*om1*tp*c*x11aI/nbrepop	# équation de humS // rq AT ici aussi ajout de devAh
+                v2 = x12S*om1*tp*c*x11aI/nbrepop - th*x12E	# équation de humE
+    			#v2 = ((om1*tp*x12S)/nbrepop) - th*x12E	# équation de humE // rq AT : il y avait une erreur dans cette equation
+                v3 = (th*x12E) - (gh*x12I)	# équation de humI
+                v4 = (gh*x12I) - (ph*x12R)	# équation de humR
+
                 x1 += DT * k1
                 x2 += DT * l1
                 x3 += DT * m1
@@ -233,7 +263,12 @@ class ModelCoustani:
                 x8 += DT * r1
                 x9 += DT * s1
                 x10 += DT * t1
-
+                x11aE += DT * u1
+                x11aI += DT * u2
+                x12S += DT * v1
+                x12E += DT * v2
+                x12I += DT * v3
+                x12R += DT * v4
             # Fin boucle for
 
             self.shp.loc[index, "oeufs"] = x1
@@ -246,19 +281,25 @@ class ModelCoustani:
             self.shp.loc[index, "a2h"] = x8
             self.shp.loc[index, "a2g"] = x9
             self.shp.loc[index, "a2o"] = x10
+            self.shp.loc[index, "ahE"] = x11aE
+            self.shp.loc[index, "ahI"] = x11aI
+            self.shp.loc[index, "humS"] = max(0,x12S)
+            self.shp.loc[index, "humE"] = max(0,x12E)
+            self.shp.loc[index, "humI"] = max(0,x12I)
+            self.shp.loc[index, "humR"] = max(0,x12R)
 
             # CalculAh
-            self.shp.loc[index, "ah"] = self.shp.loc[index, "a1h"] + self.shp.loc[index, "a2h"]
+            self.shp.loc[index, "ah"] = x5 + x8
+
             # calculAtot
             self.shp.loc[index, "adultestot"] = x4 + x5 + x6 + x7 + x8 + x9 + x10
+
             # Renseignement des dates de validite de prediction pour l'export
             self.shp.loc[index, "date_debut"] = now.toString("yyyy-MM-dd")	# for Shp export and use with time manager plugin	%Y-%m-%d
             self.shp.loc[index, "date_fin"] = fin.toString("yyyy-MM-dd")  # in QGIS
 
-            if self.iface.outputKML.isChecked() and now > bdate_output and test_display == 0 :
-                # println("output KML")
-        		# classifyAtot()
-                d = self.shp.loc[index, "adultestot"] / self.shp.loc[index, "SurfFktM2"] * 10000
+            if self.kmlExport and now > self.bdate_output and test_display == 0 :
+                d = self.shp.loc[index, "adultestot"] / self.shp.loc[index, paramKL[5]] * 10000
                 self.shp.loc[index, "Class"] = 1
                 if d >= 10 and d < 20:
                     self.shp.loc[index, "Class"] = 2
@@ -284,36 +325,38 @@ class ModelCoustani:
                 _fin = now +  datetime.timedelta(days = frequence_display)
 
                 # kml.addGeometry ("An. coustani",styleAtot, now, _fin, geom, styleAtot,0)
-                self.shp.loc[index, "Name"] = "An. coustani"
+                self.shp.loc[index, "Name"] = "An. SEIR model"
                 self.shp.loc[index, "description"] = styleAtot
                 self.shp.loc[index, "begin"] = now.strftime("%Y-%m-%d")
                 self.shp.loc[index, "end"] = _fin.strftime("%Y-%m-%d")
 
-        # Fin de la boucle sur les parcelles
         return test_display
 
-    def exportResult(self,shp_list,kml_list):
-        # # 5) Export KML
-        if self.iface.outputKML.isChecked():
-            if self.iface.multidate.isChecked():
+    def exportResult(self,shp_list,kml_list,multidate):
+        fiona.supported_drivers['KML'] = 'rw'
+
+        if self.kmlExport:
+            if multidate:
                 kml_list.to_file(self.kmlExport, driver='KML')
             else:
-                self.shp.to_file(self.kmlExport1, driver='KML')
+                self.shp.to_file(self.kmlExport, driver='KML')
 
+        columnsName = ["geometry","mdg_com_co", "mdg_fkt_co", "fokontany","date_debut","date_fin","oeufs","larves","nymphes","ah","adultestot",
+                        "fkl", "fkp", "a1o", "a2o","ahE", "ahI", "humS", "humE", "humI", "humR"]
         # 6) Export SHP
-        if self.iface.outputSHP.isChecked():
-            if self.iface.multidate.isChecked():
-                shp_list = shp_list.loc[:,shp_list.columns.isin(["geometry","mdg_com_co", "mdg_fkt_co", "fokontany","date_debut","date_fin","oeufs","larves","nymphes","ah","adultestot"])]
-                shp_list.to_file(self.shpout, driver='ESRI Shapefile')
+        if self.shpExport:
+            if multidate:
+                shp_list = shp_list.loc[:,shp_list.columns.isin(columnsName)]
+                shp_list.to_file(self.shpExport, driver='ESRI Shapefile')
             else:
-                self.shp= self.shp.loc[:,self.shp.columns.isin(["geometry","mdg_com_co", "mdg_fkt_co", "fokontany","date_debut","date_fin","oeufs","larves","nymphes","ah","adultestot"])]
-                self.shp.to_file(self.shpout1, driver='ESRI Shapefile')
+                self.shp= self.shp.loc[:,self.shp.columns.isin(columnsName)]
+                self.shp.to_file(self.shpExport, driver='ESRI Shapefile')
 
         # # 5) Export CSV
-        if self.iface.outputCSV.isChecked():
-            if self.iface.multidate.isChecked():
-                shp_list = shp_list.loc[:,shp_list.columns.isin(["geometry","mdg_com_co", "mdg_fkt_co", "fokontany","date_debut","date_fin","oeufs","larves","nymphes","ah","adultestot"])]
-                shp_list.drop('geometry',axis=1).to_csv(self.csvExport)
+        if self.csvExport:
+            if multidate:
+                shp_list = shp_list.loc[:,shp_list.columns.isin(columnsName)]
+                shp_list.drop('geometry',axis=1).to_csv(self.csvExport, sep=";")
             else:
-                self.shp= self.shp.loc[:,self.shp.columns.isin(["geometry","mdg_com_co", "mdg_fkt_co", "fokontany","date_debut","date_fin","oeufs","larves","nymphes","ah","adultestot"])]
-                self.shp.drop('geometry',axis=1).to_csv(self.csvExport1)
+                self.shp= self.shp.loc[:,self.shp.columns.isin(columnsName)]
+                self.shp.drop('geometry',axis=1).to_csv(self.csvExport, sep=";")
