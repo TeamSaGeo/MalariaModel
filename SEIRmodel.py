@@ -1,5 +1,4 @@
 import math
-import datetime
 import fiona
 
 class SEIRModel:
@@ -63,7 +62,7 @@ class SEIRModel:
     def getWeeklyTemperatureValue(self,paramMeteo,lieu,now,w):
         return self.tempCSVData.loc[(self.tempCSVData[paramMeteo[1][0]] == lieu) & (self.tempCSVData[paramMeteo[1][1]] == now.year()) , w].values[0]
 
-    def simulation(self,now,w,w7,day,paramKL,paramMeteo,date_intro):
+    def simulation(self,now,w,w7,day,paramKL,paramMeteo,cas_infectes):
         test_display = math.remainder(day,self.frequence_display)	# pour l'export des donnees tous les frequencedisplay jours
         fin = now.addDays(self.frequence_display - 1)
 
@@ -214,11 +213,9 @@ class SEIRModel:
             x10 = row["a2o"]
             x11aE = row["ahE"]
             x11aI = row["ahI"]
-            # if  (date_intro - now.toPyDate()).days == 0 :
-            if  now.daysTo(date_intro) == 0:
-                x12I = 1.0 # Nbre de personne initialement infecté
-                x12S = row["humS"] - 1.0
-                print ("introduction d'un cas de paludisme " + str(x12I), str(x12S))
+            if  now.daysTo(cas_infectes["date_intro"]) == 0:
+                x12I = cas_infectes["nb_pers"]
+                x12S = row["humS"] - x12I
             else:
                 x12I = row["humI"]
                 x12S = row["humS"]
@@ -297,6 +294,8 @@ class SEIRModel:
             # Renseignement des dates de validite de prediction pour l'export
             self.shp.loc[index, "date_debut"] = now.toString("yyyy-MM-dd")	# for Shp export and use with time manager plugin	%Y-%m-%d
             self.shp.loc[index, "date_fin"] = fin.toString("yyyy-MM-dd")  # in QGIS
+            self.shp.loc[index, "mois"] = now.toString("MMM")
+            self.shp.loc[index, "année"] = now.toString("yyyy")
 
             if self.kmlExport and now > self.bdate_output and test_display == 0 :
                 d = self.shp.loc[index, "adultestot"] / self.shp.loc[index, paramKL[5]] * 10000
@@ -322,17 +321,17 @@ class SEIRModel:
 
                 # # outputKml (now, frequencedisplay, kmlExport)
                 styleAtot= "Atot_" + str(self.shp.loc[index, "Class"])
-                _fin = now +  datetime.timedelta(days = frequence_display)
+                _fin = now.addDays(self.frequence_display)
 
                 # kml.addGeometry ("An. coustani",styleAtot, now, _fin, geom, styleAtot,0)
                 self.shp.loc[index, "Name"] = "An. SEIR model"
                 self.shp.loc[index, "description"] = styleAtot
-                self.shp.loc[index, "begin"] = now.strftime("%Y-%m-%d")
-                self.shp.loc[index, "end"] = _fin.strftime("%Y-%m-%d")
+                self.shp.loc[index, "begin"] = now.toString("YYYY-MM-dd")
+                self.shp.loc[index, "end"] = _fin.toString("YYYY-MM-dd")
 
         return test_display
 
-    def exportResult(self,shp_list,kml_list,multidate):
+    def exportResult(self,shp_list,kml_list,multidate, checked_columns):
         fiona.supported_drivers['KML'] = 'rw'
 
         if self.kmlExport:
@@ -341,8 +340,8 @@ class SEIRModel:
             else:
                 self.shp.to_file(self.kmlExport, driver='KML')
 
-        columnsName = ["geometry","mdg_com_co", "mdg_fkt_co", "fokontany","date_debut","date_fin","oeufs","larves","nymphes","ah","adultestot",
-                        "fkl", "fkp", "a1o", "a2o","ahE", "ahI", "humS", "humE", "humI", "humR"]
+        columnsName = ["geometry","mdg_com_co", "mdg_fkt_co", "fokontany","date_debut","date_fin","mois", "année"] + checked_columns
+
         # 6) Export SHP
         if self.shpExport:
             if multidate:

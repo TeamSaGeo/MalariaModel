@@ -15,6 +15,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
 
         self.pageInd = self.stackedWidget.currentIndex()
+
+        # On click on bouton select input file
         self.btn_parcelFileName.clicked.connect(lambda : self.selectInputFile(self.parcelFileName, "*.shp"))
         self.btn_rainFileName.clicked.connect(lambda : self.selectInputFile(self.rainFileName,"*.csv"))
         self.btn_tempFileName.clicked.connect(lambda : self.selectInputFile(self.tempFileName,"*.csv"))
@@ -192,10 +194,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def anyCheckedFormat(self):
         if self.outputSHP.isChecked() or self.outputKML.isChecked() or self.outputCSV.isChecked() :
+            self.label_output_format.setStyleSheet("color: black")
             return False
         else:
             self.label_output_format.setStyleSheet("color: red")
             return True
+
+    def anyCheckedItem(self):
+        for checkbox in self.groupBox_col_export.findChildren(QCheckBox):
+            if checkbox.isChecked():
+                self.groupBox_col_export.setStyleSheet("QGroupBox:title {color: rgb(0, 0, 0);}")
+                return False
+        self.groupBox_col_export.setStyleSheet("QGroupBox:title {color: rgb(255, 0, 0);}")
+        return True
 
     def EmptyLineEdit(self, input):
         if input.text():
@@ -222,6 +233,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.centralwidget,"Sélectionner le répertoire de sortie")
         if foldername:
             self.pathOutput.setText(foldername)
+            self.pathOutput.setStyleSheet("border: 1px solid white")
 
     def btnstate(self,b):
       if b.text() == "Pour une date":
@@ -298,7 +310,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 if self.kl_table_error():
                     self.listWidget.setCurrentRow(1)
                 # vérifier si répertoire de sortie ou Format de sortie est vide
-                elif self.EmptyLineEdit(self.pathOutput) or self.anyCheckedFormat():
+                elif self.EmptyLineEdit(self.pathOutput) or self.anyCheckedFormat() or self.anyCheckedItem():
                     self.listWidget.setCurrentRow(2)
                     button = QMessageBox.information(
                         self.centralwidget,
@@ -356,8 +368,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             paramKL = self.getParamKL()
             paramMeteo = self.getParamMeteo()
-            date_intro = self.date_intro.date()
-            # date_intro = datetime.date(2013, 4, 1) # date d'introduction d'un premier cas infecte humI
+            cas_infectes = {
+             "date_intro": self.date_intro.date(), # date d'introduction d'un premier cas infecte humI
+             "nb_pers": self.nb_pers_infectes.value(), # Nbre de personne initialement infecté
+            }
 
             self.params.initialisation(paramKL)
 
@@ -372,8 +386,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 # Obtenir la semaine précédent (exemple "S52")
                 w7 = self.getWeekNumber(now.addDays(-7).weekNumber()[0])
 
+                if now.daysTo(cas_infectes["date_intro"]) == 0:
+                    self.textEdit.append("Introduction de "+ str(cas_infectes["nb_pers"]) + " cas de paludisme: " + now.toString("dd/MM/yyyy"))
+
                 # Boucle sur les parcelles
-                test_display = self.params.simulation(now,w,w7,day,paramKL,paramMeteo,date_intro)
+                test_display = self.params.simulation(now,w,w7,day,paramKL,paramMeteo,cas_infectes)
                 # Fin de la boucle sur les parcelles
 
                 # Sauvegarde du résultat
@@ -389,7 +406,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             # # 5) Export Result
             if not self.cancel:
-                self.params.exportResult(shp_list,kml_list,self.multidate.isChecked())
+                checked_columns = []
+                for checkbox in self.groupBox_col_export.findChildren(QCheckBox):
+                    if checkbox.isChecked():
+                        checked_columns.append(checkbox.objectName())
+                self.params.exportResult(shp_list,kml_list,self.multidate.isChecked(), checked_columns)
                 self.textEdit.append("Simulation terminée !")
                 button = QMessageBox.information(
                     self.centralwidget,
