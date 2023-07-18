@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/images">
+        <file alias="logo_ipm">images/logo_ipm.png</file>
+        <file alias="logo_minsan">images/logo_minsan.png</file>
+        <file alias="logo_pmi">images/logo_pmi.png</file>
+        <file alias="logo_usaid">images/logo_usaid.png</file>
+    </qresource>
+</RCC>

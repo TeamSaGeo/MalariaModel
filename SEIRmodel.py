@@ -1,5 +1,6 @@
 import math
 import fiona
+from PyQt6 import QtCore
 
 class SEIRModel:
     def __init__(self,filename,shp,rainCSVData,tempCSVData):
@@ -10,12 +11,6 @@ class SEIRModel:
         self.shpExport = ""
         self.csvExport = ""
         self.kmlExport = ""
-
-    def getDateMin(self,field):
-        return self.tempCSVData[field].min() + 1 # L'année suivant l'année minimum
-
-    def getDateMax(self,field):
-        return self.tempCSVData[field].max()
 
     def setShpExport(self,path):
         self.shpExport = path
@@ -52,19 +47,46 @@ class SEIRModel:
         self.shp["humE"] = 0.0
         self.shp["humI"] = 0.0
         self.shp["humR"] = 0.0
-        self.shp["rain7"] = 0.0
-        self.shp["raincumul7"] = 0.0
-        self.shp["rainday7"] = 0.0
 
-    def getWeeklyRainValue(self,paramMeteo,lieu,now,w):
-        return self.rainCSVData.loc[(self.rainCSVData[paramMeteo[0][0]] == lieu) & (self.rainCSVData[paramMeteo[0][1]] == now.year()) , w].values[0]
+    def getRainExtreme(self, df, paramMeteo, lieu):
+        min =  df.loc[df[paramMeteo[0]] == lieu, paramMeteo[4]].min() 	# Précipitation minimum
+        max =  df.loc[df[paramMeteo[0]] == lieu, paramMeteo[4]].max()	# 322.88 Précipitation maximum
+        return min, max
 
-    def getWeeklyTemperatureValue(self,paramMeteo,lieu,now,w):
-        return self.tempCSVData.loc[(self.tempCSVData[paramMeteo[1][0]] == lieu) & (self.tempCSVData[paramMeteo[1][1]] == now.year()) , w].values[0]
+    def getWeeklyParamValue(self, df, paramMeteo,lieu,year,w):
+        try:
+            val = df.loc[(df[paramMeteo[0]] == lieu) & (df[paramMeteo[1]] == year) & (df[paramMeteo[2]] == w) , paramMeteo[4]].values[0]
+        except IndexError:
+            val = float("nan")
+        return val
 
-    def simulation(self,now,w,w7,day,paramKL,paramMeteo,cas_infectes):
+    def getMonthlyParamValue(self, df, paramMeteo,lieu,now):
+        try:
+            val = df.loc[(df[paramMeteo[0]] == lieu) & (df[paramMeteo[1]] == now.year()) & (df[paramMeteo[2]] == now.month()) , paramMeteo[4]].values[0]
+        except IndexError:
+            val = float("nan")
+        return val
+
+    def getDailyParamValue(self, df, paramMeteo,lieu,now):
+        try:
+            val = df.loc[(df[paramMeteo[0]] == lieu) & (df[paramMeteo[1]] == now.year()) & (df[paramMeteo[2]] == now.month()) & (df[paramMeteo[3]] == now.day()) , paramMeteo[4]].values[0]
+        except IndexError:
+            val = float("nan")
+        return val
+
+    def getWeekNumber(self,w):
+        if w < 10:
+            return "s0" + str(w)
+        else:
+            return "s" + str(w)
+
+    def simulation(self,now,freq_meteo,day,paramKL,paramMeteo,cas_infectes):
         test_display = math.remainder(day,self.frequence_display)	# pour l'export des donnees tous les frequencedisplay jours
         fin = now.addDays(self.frequence_display - 1)
+
+        if freq_meteo == "week":
+            w = self.getWeekNumber(now.weekNumber()[0]) # Obtenir la semaine courante de l'année (exemple "S1")
+            # w7 = self.getWeekNumber(now.addDays(-7).weekNumber()[0]) # Obtenir la semaine précédent de l'année (exemple "S52")
 
         TE = 12.9
         TDDE = 28.55 # 26.6
@@ -74,8 +96,9 @@ class SEIRModel:
         fao = 2.0 # fAo
         fme = 0.1 # Taux de mortalite des oeufs
         mur = 0.08 # taux de mortalité additionnelle du comportement de recherche (d'hôtes et de sites de ponte)
-        raincumul7min = 0.0	# Précipitation par semaine minimum
-        raincumul7max = 322.87	# 322.88 Précipitation par semaine maximum
+        # raincumul7min = 0.0	# Précipitation par semaine minimum
+        # raincumul7max = 322.87	# 322.88 Précipitation par semaine maximum
+
         tempmin = 16	# Température minimale de survie des Plasmodium
         # dynpop
         # Les parametres du modele
@@ -96,21 +119,37 @@ class SEIRModel:
         npastemps = int(1/DT)
 
         for index, row in self.shp.iterrows():
-            # Read Meteo
             lieu = row[paramKL[0]]
-            temperature = self.getWeeklyTemperatureValue(paramMeteo,lieu,now,w)
-            # w7 = self.getWeekNumber(now.addDays(-7).weekNumber()[0])
-            # if w7 == "s53" :
-            #     # try :
-            #     #     rain7 = rainCSVData.loc[(rainCSVData['CodeCommune'] == codeCommune) & (rainCSVData['numero_annee'] == (now.year - 1)) , "s52"].values[0]
-            #     #     raincumul7 = rainCSVData.loc[(rainCSVData['CodeCommune'] == codeCommune) & (rainCSVData['numero_annee'] == (now.year - 1)) , "s52"].values[0]
-            #     # except IndexError:
-            #     rain7 = self.getWeeklyRainValue(codeCommune,now,"s52") / 7
-            #     raincumul7 = self.getWeeklyRainValue(codeCommune,now,"s52")
-            # else:
-            rain = self.getWeeklyRainValue(paramMeteo,lieu,now,w) / 7
-            raincumul7 = self.getWeeklyRainValue(paramMeteo,lieu,now,w7)
-            rain7 = raincumul7 / 7
+
+            ## Read Meteo
+            rain_min, rain_max = self.getRainExtreme(self.rainCSVData,paramMeteo[0],lieu)
+            # Get daily data meteo values from weekly value
+            if freq_meteo == "week":
+                temperature = self.getWeeklyParamValue(self.tempCSVData, paramMeteo[1],lieu,now.year(),w)
+                rain = self.getWeeklyParamValue(self.rainCSVData,paramMeteo[0],lieu,now.year(),w)
+                # # Cumul des pluies de la semaine précédente
+                # if w == "s01" :
+                #     if now != self.bdate:
+                #         previous_rain = self.getWeeklyParamValue(self.rainCSVData,paramMeteo[0],lieu,now.year(),w)
+                #     else:
+                #         previous_rain = rain
+                #     print(now, (now.year() - 1), w7, previous_rain)
+                # else:
+                #     previous_rain = self.getWeeklyParamValue(self.rainCSVData, paramMeteo[0],lieu,now,w7)
+
+            # Get daily data meteo values from monthly value
+            elif freq_meteo == "month":
+                temperature = self.getMonthlyParamValue(self.tempCSVData, paramMeteo[1],lieu,now)
+                # nbdays_in_month = monthrange(now.year(), now.month())[1]
+                rain = self.getMonthlyParamValue(self.rainCSVData, paramMeteo[0],lieu,now)
+
+            # Get daily data meteo values
+            else:
+                temperature = self.getDailyParamValue(self.tempCSVData, paramMeteo[1], lieu, now)
+                rain = self.getDailyParamValue(self.rainCSVData, paramMeteo[0],lieu,now)
+
+            # normalisation des précipitations
+            pnorm = (rain - rain_min) / (rain_max - rain_min)
 
             # Updatefunction
             # Egg development
@@ -135,12 +174,12 @@ class SEIRModel:
                 fag1= temperature - TAg
                 fag = fag1 / TDDAg
 
-            # Taux de mortalite des larves
+            # Taux de mortalite des larves et des nymphes
             fml1 = math.exp(-temperature/2)
             fml = fml1 + 0.08
 
             # Taux de mortalite des nymphes
-            fmp = fml
+            # fmp = fml
 
             # Taux de mortalite des adultes
             fma1 = 0.000148 * temperature * temperature
@@ -153,17 +192,12 @@ class SEIRModel:
 
             # capacite du milieu en larves
             m = now.month()
-            # surfRiv = row["RivieresM2"] if not math.isnan(row["RivieresM2"]) else 0
-            # surfCult = row["CultAgriM2"] if not math.isnan(row["CultAgriM2"]) else 0
-            # surfEau = row["PlanDeauM2"] if not math.isnan(row["PlanDeauM2"]) else 0
-            # surfRiz = row["RizieresM2"] if not math.isnan(row["RizieresM2"]) else 0
 
             surfEau = row[paramKL[1]]
             surfRiv = row[paramKL[2]]
             surfCult = row[paramKL[3]]
             surfRiz = row[paramKL[4]]
             surfTot = row[paramKL[5]]
-            # surfSettlement = row[paramKL[6]]
             nbrepop= row[paramKL[6]]
 
             # Si les valeurs des gites larvaires sont nulles alors les valeurs des paramètres KL seront nulles
@@ -181,7 +215,6 @@ class SEIRModel:
             	klfixRiz = int(surfRiz * 1914.0) if not math.isnan(surfRiz) else surfRiz
             	klvarRiz = 0.0
 
-            pnorm = (raincumul7 - raincumul7min) / (raincumul7max - raincumul7min)	# normalisation des précipitations par semaine
             # fkl = kl.doubleValue()
 
             klvar = klvarRiv + klvarCult + klvarEau + klvarRiz
@@ -189,7 +222,7 @@ class SEIRModel:
 
             fkl = klfix + min(klvar * pnorm, klvar) # Calcul capacité de charge
 
-            fkp = fkl
+            # fkp = fkl
             # Taux d'incubation chez les Anopheles
             fia = (temperature + tempmin)/111
 
@@ -232,8 +265,8 @@ class SEIRModel:
                     k1 = float("nan")
                 l1b = fml*(1.0+x2/fkl) + flarvae
                 l1 = fegg*x1 - x2*l1b
-                m1 = flarvae*x2 - x3*(fmp+ fpupae)
-                n1a = math.exp(-muPem*(1+x3/fkp))
+                m1 = flarvae*x2 - x3*(fml+ fpupae)
+                n1a = math.exp(-muPem*(1+x3/fkl))
                 n1 = fpupae * sexr * x3 * n1a - x4 * (fma + devAem)
                 o1 = devAem*x4 - x5*(fmurma + devAh)
                 p1 = devAh*x5 - x6*(fma + fag)
@@ -280,10 +313,10 @@ class SEIRModel:
             self.shp.loc[index, "a2o"] = x10
             self.shp.loc[index, "ahE"] = x11aE
             self.shp.loc[index, "ahI"] = x11aI
-            self.shp.loc[index, "humS"] = max(0,x12S)
-            self.shp.loc[index, "humE"] = max(0,x12E)
-            self.shp.loc[index, "humI"] = max(0,x12I)
-            self.shp.loc[index, "humR"] = max(0,x12R)
+            self.shp.loc[index, "humS"] = int(max(0,x12S))
+            self.shp.loc[index, "humE"] = int(max(0,x12E))
+            self.shp.loc[index, "humI"] = int(max(0,x12I))
+            self.shp.loc[index, "humR"] = int(max(0,x12R))
 
             # CalculAh
             self.shp.loc[index, "ah"] = x5 + x8
@@ -294,8 +327,14 @@ class SEIRModel:
             # Renseignement des dates de validite de prediction pour l'export
             self.shp.loc[index, "date_debut"] = now.toString("yyyy-MM-dd")	# for Shp export and use with time manager plugin	%Y-%m-%d
             self.shp.loc[index, "date_fin"] = fin.toString("yyyy-MM-dd")  # in QGIS
-            self.shp.loc[index, "mois"] = now.toString("MMM")
-            self.shp.loc[index, "année"] = now.toString("yyyy")
+            if now.month() != fin.month() and now.daysTo(QtCore.QDate(fin.year(), fin.month(), 1)) > 5:
+                self.shp.loc[index, "mois"] = now.toString("MMM")
+                self.shp.loc[index, "année"] = now.toString("yyyy")
+                self.shp.loc[index, "mois-année"] = now.toString("MMM-yy")
+            else:
+                self.shp.loc[index, "mois"] = fin.toString("MMM")
+                self.shp.loc[index, "année"] = fin.toString("yyyy")
+                self.shp.loc[index, "mois-année"] = fin.toString("MMM-yy")
 
             if self.kmlExport and now > self.bdate_output and test_display == 0 :
                 d = self.shp.loc[index, "adultestot"] / self.shp.loc[index, paramKL[5]] * 10000
@@ -340,7 +379,7 @@ class SEIRModel:
             else:
                 self.shp.to_file(self.kmlExport, driver='KML')
 
-        columnsName = ["geometry","mdg_com_co", "mdg_fkt_co", "fokontany","date_debut","date_fin","mois", "année"] + checked_columns
+        columnsName = ["geometry","mdg_com_co", "mdg_fkt_co", "fokontany","date_debut","date_fin","mois", "année", "mois-année"] + checked_columns
 
         # 6) Export SHP
         if self.shpExport:
@@ -355,7 +394,7 @@ class SEIRModel:
         if self.csvExport:
             if multidate:
                 shp_list = shp_list.loc[:,shp_list.columns.isin(columnsName)]
-                shp_list.drop('geometry',axis=1).to_csv(self.csvExport, sep=";")
+                shp_list.drop('geometry',axis=1).to_csv(self.csvExport, sep=";", decimal=",", index=False, encoding="utf-8")
             else:
                 self.shp= self.shp.loc[:,self.shp.columns.isin(columnsName)]
-                self.shp.drop('geometry',axis=1).to_csv(self.csvExport, sep=";")
+                self.shp.drop('geometry',axis=1).to_csv(self.csvExport, sep=";", decimal=",", index=False, encoding="utf-8")
