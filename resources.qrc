@@ -4,5 +4,6 @@
         <file alias="logo_minsan">images/logo_minsan.png</file>
         <file alias="logo_pmi">images/logo_pmi.png</file>
         <file alias="logo_usaid">images/logo_usaid.png</file>
+        <file alias="icon_model">images/icon_model.ico</file>
     </qresource>
 </RCC>

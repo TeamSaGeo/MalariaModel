@@ -47,6 +47,7 @@ class SEIRModel:
         self.shp["humE"] = 0.0
         self.shp["humI"] = 0.0
         self.shp["humR"] = 0.0
+        self.shp["fkl"] = 0.0
 
     def getRainExtreme(self, df, paramMeteo, lieu):
         min =  df.loc[df[paramMeteo[0]] == lieu, paramMeteo[4]].min() 	# Précipitation minimum
@@ -60,16 +61,12 @@ class SEIRModel:
             val = float("nan")
         return val
 
-    def getMonthlyParamValue(self, df, paramMeteo,lieu,now):
+    def getMonthlyorDailyParamValue(self, df, paramMeteo,lieu,now):
         try:
-            val = df.loc[(df[paramMeteo[0]] == lieu) & (df[paramMeteo[1]] == now.year()) & (df[paramMeteo[2]] == now.month()) , paramMeteo[4]].values[0]
-        except IndexError:
-            val = float("nan")
-        return val
-
-    def getDailyParamValue(self, df, paramMeteo,lieu,now):
-        try:
-            val = df.loc[(df[paramMeteo[0]] == lieu) & (df[paramMeteo[1]] == now.year()) & (df[paramMeteo[2]] == now.month()) & (df[paramMeteo[3]] == now.day()) , paramMeteo[4]].values[0]
+            if paramMeteo[3]:
+                val = df.loc[(df[paramMeteo[0]] == lieu) & (df[paramMeteo[1]] == now.year()) & (df[paramMeteo[2]] == now.month()) & (df[paramMeteo[3]] == now.day()) , paramMeteo[4]].values[0]
+            else:
+                val = df.loc[(df[paramMeteo[0]] == lieu) & (df[paramMeteo[1]] == now.year()) & (df[paramMeteo[2]] == now.month()) , paramMeteo[4]].values[0]
         except IndexError:
             val = float("nan")
         return val
@@ -81,13 +78,14 @@ class SEIRModel:
             return "s" + str(w)
 
     def simulation(self,now,freq_meteo,day,paramKL,paramMeteo,cas_infectes):
-        test_display = math.remainder(day,self.frequence_display)	# pour l'export des donnees tous les frequencedisplay jours
+        test_display = math.remainder(day,self.frequence_display)	# pour l'export des donnees tous les n jours
         fin = now.addDays(self.frequence_display - 1)
 
         if freq_meteo == "week":
             w = self.getWeekNumber(now.weekNumber()[0]) # Obtenir la semaine courante de l'année (exemple "S1")
             # w7 = self.getWeekNumber(now.addDays(-7).weekNumber()[0]) # Obtenir la semaine précédent de l'année (exemple "S52")
 
+        # Les paramètres du modèle
         TE = 12.9
         TDDE = 28.55 # 26.6
         fegg = 0.0
@@ -96,12 +94,7 @@ class SEIRModel:
         fao = 2.0 # fAo
         fme = 0.1 # Taux de mortalite des oeufs
         mur = 0.08 # taux de mortalité additionnelle du comportement de recherche (d'hôtes et de sites de ponte)
-        # raincumul7min = 0.0	# Précipitation par semaine minimum
-        # raincumul7max = 322.87	# 322.88 Précipitation par semaine maximum
-
         tempmin = 16	# Température minimale de survie des Plasmodium
-        # dynpop
-        # Les parametres du modele
         b1 = 65 # 72 nombre moyen d'oeufs des nullipares
         b2 = 93 # 96 nombre moyen d'oeufs des pares
         sexr = 0.72  # 0.7 sex ratio
@@ -109,7 +102,6 @@ class SEIRModel:
         devAh = 2 # taux de developpement des adultes en recherche d'hote
         devAem = 0.8 # taux de developement des adultes emergents
         mui = 0.08	# taux de mortalité Anopheles infectés (hypothèse ==> même que mur)
-
         om1 = 0.533	# taux d'infection chez les humains (omega 1)
         om2 = 0.09	# taux d'infection chez les Anopheles (omega 2)
         ph = 0.00136	# taux de perte de l'immunité (phi h)
@@ -121,9 +113,9 @@ class SEIRModel:
         for index, row in self.shp.iterrows():
             lieu = row[paramKL[0]]
 
-            ## Read Meteo
+            ## Lecture des données Méteo
             rain_min, rain_max = self.getRainExtreme(self.rainCSVData,paramMeteo[0],lieu)
-            # Get daily data meteo values from weekly value
+            # Obtenir les données hebdomadaires
             if freq_meteo == "week":
                 temperature = self.getWeeklyParamValue(self.tempCSVData, paramMeteo[1],lieu,now.year(),w)
                 rain = self.getWeeklyParamValue(self.rainCSVData,paramMeteo[0],lieu,now.year(),w)
@@ -137,18 +129,11 @@ class SEIRModel:
                 # else:
                 #     previous_rain = self.getWeeklyParamValue(self.rainCSVData, paramMeteo[0],lieu,now,w7)
 
-            # Get daily data meteo values from monthly value
-            elif freq_meteo == "month":
-                temperature = self.getMonthlyParamValue(self.tempCSVData, paramMeteo[1],lieu,now)
-                # nbdays_in_month = monthrange(now.year(), now.month())[1]
-                rain = self.getMonthlyParamValue(self.rainCSVData, paramMeteo[0],lieu,now)
-
-            # Get daily data meteo values
+            # Obtenir les données journalières ou mensuelles
             else:
-                temperature = self.getDailyParamValue(self.tempCSVData, paramMeteo[1], lieu, now)
-                rain = self.getDailyParamValue(self.rainCSVData, paramMeteo[0],lieu,now)
-
-            # normalisation des précipitations
+                temperature = self.getMonthlyorDailyParamValue(self.tempCSVData, paramMeteo[1], lieu, now)
+                rain = self.getMonthlyorDailyParamValue(self.rainCSVData, paramMeteo[0],lieu,now)
+            # normalisation des données de précipitations
             pnorm = (rain - rain_min) / (rain_max - rain_min)
 
             # Updatefunction
@@ -173,13 +158,12 @@ class SEIRModel:
             if temperature > TAg :
                 fag1= temperature - TAg
                 fag = fag1 / TDDAg
+            else:
+                fag = 0
 
             # Taux de mortalite des larves et des nymphes
             fml1 = math.exp(-temperature/2)
             fml = fml1 + 0.08
-
-            # Taux de mortalite des nymphes
-            # fmp = fml
 
             # Taux de mortalite des adultes
             fma1 = 0.000148 * temperature * temperature
@@ -191,8 +175,6 @@ class SEIRModel:
             fmurma = fma + mur
 
             # capacite du milieu en larves
-            m = now.month()
-
             surfEau = row[paramKL[1]]
             surfRiv = row[paramKL[2]]
             surfCult = row[paramKL[3]]
@@ -208,6 +190,7 @@ class SEIRModel:
             klvarEau = int(surfEau * 1914 * 0.9) if not math.isnan(surfEau) else surfEau
             klfixEau = int(surfEau * 1914 * 0.1) if not math.isnan(surfEau) else surfEau
 
+            m = now.month()
             if (((m >= 1) and (m <= 7)) or ((m >= 10) and (m <= 12))) :
                 klvarRiz = int(surfRiz * 1914 * 0.9) if not math.isnan(surfRiz) else surfRiz
                 klfixRiz = int(surfRiz * 1914 * 0.1) if not math.isnan(surfRiz) else surfRiz
@@ -219,21 +202,22 @@ class SEIRModel:
 
             klvar = klvarRiv + klvarCult + klvarEau + klvarRiz
             klfix = klfixRiv + klfixCult + klfixEau + klfixRiz
-
             fkl = klfix + min(klvar * pnorm, klvar) # Calcul capacité de charge
 
             # fkp = fkl
             # Taux d'incubation chez les Anopheles
             fia = (temperature + tempmin)/111
 
-            # c = surfSettlement/surfTot
+            # c = surfSettlement/surfTot # surface village (m²) / surface totale du fokontany (m²)
             c = 0.01 # example
+
+            # taux de piqûre
             try:
-                tp = self.shp.loc[index, "ah"]/self.shp.loc[index, "adultestot"]	# taux de piqûre
+                tp = self.shp.loc[index, "ah"]/self.shp.loc[index, "adultestot"]
             except :
                 tp = 0
 
-            # initialisation
+            # initialisation des valeurs résultats par ligne
             x1 = row["oeufs"]
             x2 = row["larves"]
             x3 = row["nymphes"]
@@ -246,7 +230,7 @@ class SEIRModel:
             x10 = row["a2o"]
             x11aE = row["ahE"]
             x11aI = row["ahI"]
-            if  now.daysTo(cas_infectes["date_intro"]) == 0:
+            if now.daysTo(cas_infectes["date_intro"]) == 0:
                 x12I = cas_infectes["nb_pers"]
                 x12S = row["humS"] - x12I
             else:
@@ -257,7 +241,7 @@ class SEIRModel:
 
             k1 = l1 = m1 = n1 = o1 = p1 = q1 = r1 = s1 = t1 = u1 = u2 = v1 = v2 = v3 = v4 = 0.0
 
-            # Resolution des equations
+            # Débur de la boucle de résolution des équations
             for y in range(0,npastemps) :
                 try:
                     k1 = fao *(b1*round(x7) + b2*round(x10)) - x1*(fme + fegg)
@@ -299,7 +283,7 @@ class SEIRModel:
                 x12E += DT * v2
                 x12I += DT * v3
                 x12R += DT * v4
-            # Fin boucle for
+            # Fin boucle de résolution des équations
 
             self.shp.loc[index, "oeufs"] = x1
             self.shp.loc[index, "larves"] = x2
@@ -317,6 +301,7 @@ class SEIRModel:
             self.shp.loc[index, "humE"] = int(max(0,x12E))
             self.shp.loc[index, "humI"] = int(max(0,x12I))
             self.shp.loc[index, "humR"] = int(max(0,x12R))
+            self.shp.loc[index, "fkl"] = fkl
 
             # CalculAh
             self.shp.loc[index, "ah"] = x5 + x8
@@ -324,10 +309,10 @@ class SEIRModel:
             # calculAtot
             self.shp.loc[index, "adultestot"] = x4 + x5 + x6 + x7 + x8 + x9 + x10
 
-            # Renseignement des dates de validite de prediction pour l'export
-            self.shp.loc[index, "date_debut"] = now.toString("yyyy-MM-dd")	# for Shp export and use with time manager plugin	%Y-%m-%d
-            self.shp.loc[index, "date_fin"] = fin.toString("yyyy-MM-dd")  # in QGIS
-            if now.month() != fin.month() and now.daysTo(QtCore.QDate(fin.year(), fin.month(), 1)) > 5:
+            # Renseignement des dates de la validité de la prédiction pour l'export
+            self.shp.loc[index, "date_debut"] = now.toString("yyyy-MM-dd")
+            self.shp.loc[index, "date_fin"] = fin.toString("yyyy-MM-dd")
+            if now.month() != fin.month() and now.daysTo(QtCore.QDate(fin.year(), fin.month(), 1)) > QtCore.QDate(fin.year(), fin.month(), 1).daysTo(fin):
                 self.shp.loc[index, "mois"] = now.toString("MMM")
                 self.shp.loc[index, "année"] = now.toString("yyyy")
                 self.shp.loc[index, "mois-année"] = now.toString("MMM-yy")
@@ -371,8 +356,8 @@ class SEIRModel:
         return test_display
 
     def exportResult(self,shp_list,kml_list,multidate, checked_columns):
+        # a) Export KML
         fiona.supported_drivers['KML'] = 'rw'
-
         if self.kmlExport:
             if multidate:
                 kml_list.to_file(self.kmlExport, driver='KML')
@@ -380,8 +365,7 @@ class SEIRModel:
                 self.shp.to_file(self.kmlExport, driver='KML')
 
         columnsName = ["geometry","mdg_com_co", "mdg_fkt_co", "fokontany","date_debut","date_fin","mois", "année", "mois-année"] + checked_columns
-
-        # 6) Export SHP
+        # b) Export SHP
         if self.shpExport:
             if multidate:
                 shp_list = shp_list.loc[:,shp_list.columns.isin(columnsName)]
@@ -389,8 +373,7 @@ class SEIRModel:
             else:
                 self.shp= self.shp.loc[:,self.shp.columns.isin(columnsName)]
                 self.shp.to_file(self.shpExport, driver='ESRI Shapefile')
-
-        # # 5) Export CSV
+        # c) Export CSV
         if self.csvExport:
             if multidate:
                 shp_list = shp_list.loc[:,shp_list.columns.isin(columnsName)]

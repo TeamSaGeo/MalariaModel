@@ -17,13 +17,117 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>Malaria Model</string>
+   <string>ALARM Palu</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_4">
     <property name="horizontalSpacing">
      <number>60</number>
     </property>
+    <item row="0" column="0">
+     <widget class="QLabel" name="logo_minsan">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string>logo_minsan</string>
+      </property>
+      <property name="textFormat">
+       <enum>Qt::AutoText</enum>
+      </property>
+      <property name="scaledContents">
+       <bool>false</bool>
+      </property>
+      <property name="margin">
+       <number>0</number>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="3">
+     <widget class="QLabel" name="logo_ipm">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string>logo_ipm</string>
+      </property>
+      <property name="scaledContents">
+       <bool>false</bool>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+      <property name="margin">
+       <number>0</number>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="QLabel" name="logo_pmi">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string>logo_pmi</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0" colspan="4">
+     <widget class="QLabel" name="logo_app">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>9</pointsize>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="autoFillBackground">
+       <bool>false</bool>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color : white; border-radius: 10px;</string>
+      </property>
+      <property name="text">
+       <string>&lt;html&gt;ALARM-Palu&lt;br&gt;ModélisAtion de la dynamique de popuLAtion des moustiques et du Risque de transMission du paludisme &lt;/html&gt;</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+      <property name="margin">
+       <number>0</number>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="2">
+     <widget class="QLabel" name="logo_usaid">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="autoFillBackground">
+       <bool>false</bool>
+      </property>
+      <property name="text">
+       <string>logo_usaid</string>
+      </property>
+     </widget>
+    </item>
     <item row="2" column="0" colspan="4">
      <widget class="QTabWidget" name="tabWidget">
       <property name="sizePolicy">
@@ -305,8 +409,8 @@
            <string>Eléments à exportés</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_9">
-           <item row="3" column="0">
-            <widget class="QCheckBox" name="larves">
+           <item row="4" column="2">
+            <widget class="QCheckBox" name="humI">
              <property name="font">
               <font>
                <pointsize>9</pointsize>
@@ -314,11 +418,11 @@
               </font>
              </property>
              <property name="text">
-              <string>larves</string>
+              <string>humains infectés</string>
              </property>
             </widget>
            </item>
-           <item row="0" column="0">
+           <item row="1" column="0">
             <widget class="QCheckBox" name="oeufs">
              <property name="font">
               <font>
@@ -331,124 +435,7 @@
              </property>
             </widget>
            </item>
-           <item row="2" column="0">
-            <widget class="QCheckBox" name="nymphes">
-             <property name="font">
-              <font>
-               <pointsize>9</pointsize>
-               <bold>false</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>nymphes</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QCheckBox" name="ah">
-             <property name="font">
-              <font>
-               <pointsize>9</pointsize>
-               <bold>false</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>adultes femelles nullipares et pares en recherche d'hotes</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1">
-            <widget class="QCheckBox" name="a1o">
-             <property name="font">
-              <font>
-               <pointsize>9</pointsize>
-               <bold>false</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>adultes femelles nullipares en recherche de sites de ponte</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="1">
-            <widget class="QCheckBox" name="a2o">
-             <property name="font">
-              <font>
-               <pointsize>9</pointsize>
-               <bold>false</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>adultes femelles pares en recherche de sites de ponte</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="0">
-            <widget class="QCheckBox" name="adultestot">
-             <property name="font">
-              <font>
-               <pointsize>9</pointsize>
-               <bold>false</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>moustiques adultes</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="1">
-            <widget class="QCheckBox" name="ahE">
-             <property name="font">
-              <font>
-               <pointsize>9</pointsize>
-               <bold>false</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>adultes femelles en recherche d'hotes exposés</string>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="0">
-            <widget class="QCheckBox" name="humS">
-             <property name="font">
-              <font>
-               <pointsize>9</pointsize>
-               <bold>false</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>humain suceptible</string>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="1">
-            <widget class="QCheckBox" name="ahI">
-             <property name="font">
-              <font>
-               <pointsize>9</pointsize>
-               <bold>false</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>adultes femelles en recherche d'hotes infectés</string>
-             </property>
-            </widget>
-           </item>
-           <item row="7" column="0">
-            <widget class="QCheckBox" name="humE">
-             <property name="font">
-              <font>
-               <pointsize>9</pointsize>
-               <bold>false</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>humain exposé</string>
-             </property>
-            </widget>
-           </item>
-           <item row="7" column="1">
+           <item row="9" column="1">
             <widget class="QCheckBox" name="fkl">
              <property name="font">
               <font>
@@ -461,7 +448,124 @@
              </property>
             </widget>
            </item>
-           <item row="11" column="1">
+           <item row="6" column="1">
+            <widget class="QCheckBox" name="ahE">
+             <property name="font">
+              <font>
+               <pointsize>9</pointsize>
+               <bold>false</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>adultes femelles en recherche d'hotes exposés</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QCheckBox" name="ah">
+             <property name="font">
+              <font>
+               <pointsize>9</pointsize>
+               <bold>false</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>adultes femelles nullipares et pares en recherche d'hotes</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="0">
+            <widget class="QCheckBox" name="adultestot">
+             <property name="font">
+              <font>
+               <pointsize>9</pointsize>
+               <bold>false</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>moustiques adultes</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QCheckBox" name="a1o">
+             <property name="font">
+              <font>
+               <pointsize>9</pointsize>
+               <bold>false</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>adultes femelles nullipares en recherche de sites de ponte</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="2">
+            <widget class="QCheckBox" name="humR">
+             <property name="font">
+              <font>
+               <pointsize>9</pointsize>
+               <bold>false</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>humains rétablis</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="2">
+            <widget class="QCheckBox" name="humE">
+             <property name="font">
+              <font>
+               <pointsize>9</pointsize>
+               <bold>false</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>humains exposés</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2">
+            <widget class="QCheckBox" name="humS">
+             <property name="font">
+              <font>
+               <pointsize>9</pointsize>
+               <bold>false</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>humains suceptibles</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QCheckBox" name="nymphes">
+             <property name="font">
+              <font>
+               <pointsize>9</pointsize>
+               <bold>false</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>nymphes</string>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="1">
+            <widget class="QCheckBox" name="ahI">
+             <property name="font">
+              <font>
+               <pointsize>9</pointsize>
+               <bold>false</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>adultes femelles en recherche d'hotes infectés</string>
+             </property>
+            </widget>
+           </item>
+           <item row="13" column="1">
             <widget class="QCheckBox" name="fkp">
              <property name="font">
               <font>
@@ -474,8 +578,8 @@
              </property>
             </widget>
            </item>
-           <item row="11" column="0">
-            <widget class="QCheckBox" name="humI">
+           <item row="4" column="0">
+            <widget class="QCheckBox" name="larves">
              <property name="font">
               <font>
                <pointsize>9</pointsize>
@@ -483,12 +587,12 @@
               </font>
              </property>
              <property name="text">
-              <string>humain infecté</string>
+              <string>larves</string>
              </property>
             </widget>
            </item>
-           <item row="13" column="0">
-            <widget class="QCheckBox" name="humR">
+           <item row="1" column="1">
+            <widget class="QCheckBox" name="a2o">
              <property name="font">
               <font>
                <pointsize>9</pointsize>
@@ -496,7 +600,19 @@
               </font>
              </property>
              <property name="text">
-              <string>humain rétabli</string>
+              <string>adultes femelles pares en recherche de sites de ponte</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="2">
+            <widget class="QCheckBox" name="select_all">
+             <property name="font">
+              <font>
+               <bold>false</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>Sélectionner tout</string>
              </property>
             </widget>
            </item>
@@ -561,7 +677,7 @@
               </font>
              </property>
              <property name="minimum">
-              <number>1</number>
+              <number>0</number>
              </property>
             </widget>
            </item>
@@ -885,7 +1001,7 @@
         <item row="0" column="0" colspan="5">
          <widget class="QTextEdit" name="textEdit">
           <property name="enabled">
-           <bool>false</bool>
+           <bool>true</bool>
           </property>
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -896,114 +1012,16 @@
           <property name="styleSheet">
            <string notr="true">background-color : white; color: black;</string>
           </property>
+          <property name="verticalScrollBarPolicy">
+           <enum>Qt::ScrollBarAsNeeded</enum>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
          </widget>
         </item>
        </layout>
       </widget>
-     </widget>
-    </item>
-    <item row="0" column="2">
-     <widget class="QLabel" name="logo_usaid">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="autoFillBackground">
-       <bool>false</bool>
-      </property>
-      <property name="text">
-       <string>logo_usaid</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="3">
-     <widget class="QLabel" name="logo_ipm">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="text">
-       <string>logo_ipm</string>
-      </property>
-      <property name="scaledContents">
-       <bool>false</bool>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-      </property>
-      <property name="margin">
-       <number>0</number>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="0">
-     <widget class="QLabel" name="logo_minsan">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="text">
-       <string>logo_minsan</string>
-      </property>
-      <property name="textFormat">
-       <enum>Qt::AutoText</enum>
-      </property>
-      <property name="scaledContents">
-       <bool>false</bool>
-      </property>
-      <property name="margin">
-       <number>0</number>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="1">
-     <widget class="QLabel" name="logo_pmi">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="text">
-       <string>logo_pmi</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="0" colspan="4">
-     <widget class="QLabel" name="logo_app">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="font">
-       <font>
-        <pointsize>9</pointsize>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="autoFillBackground">
-       <bool>false</bool>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background-color : white; border-radius: 10px;</string>
-      </property>
-      <property name="text">
-       <string>&lt;html&gt;ALARM-Palu&lt;br&gt;ModélisAtion de la dynamique de popuLAtion des moustiques et du Risque de transMission du paludisme &lt;/html&gt;</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-      <property name="margin">
-       <number>0</number>
-      </property>
      </widget>
     </item>
    </layout>

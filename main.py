@@ -1,43 +1,49 @@
-import sys
-from PyQt6 import uic, QtCore
+from PyQt6 import QtCore
 from PyQt6.QtWidgets import *
-from PyQt6.QtGui import QPixmap
-from mainwindow import Ui_MainWindow
-
-from SEIRmodel import SEIRModel
+from PyQt6.QtGui import QPixmap, QIcon
 import geopandas as gpd
 import pandas as pd
-import ntpath
-import os
+import os, sys, ntpath
+from mainwindow import Ui_MainWindow
+from SEIRmodel import SEIRModel
 import resources
-from pandas.api.types import is_numeric_dtype
 
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, *args, obj=None, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setupUi(self)
 
-        # On click on bouton select input file
+        # action en cliquant sur le bouton ""..."" de sélection des fichiers d'entrée
         self.btn_parcelFileName.clicked.connect(lambda : self.selectInputFile(self.parcelFileName, "*.shp"))
         self.btn_rainFileName.clicked.connect(lambda : self.selectInputFile(self.rainFileName,"*.csv"))
         self.btn_tempFileName.clicked.connect(lambda : self.selectInputFile(self.tempFileName,"*.csv"))
 
+        # Obtenir les logos
         self.logo_minsan.setPixmap(QPixmap(":/images/logo_minsan"))
         self.logo_pmi.setPixmap(QPixmap(":/images/logo_pmi"))
         self.logo_usaid.setPixmap(QPixmap(":/images/logo_usaid"))
         self.logo_ipm.setPixmap(QPixmap(":/images/logo_ipm"))
+        self.setWindowIcon(QIcon(":/images/icon_model"))
 
-        # on click on button "charger" et "effacer"
+        # action en cliquant sur le bouton "charger" et "effacer"
         self.btn_load_input.clicked.connect(self.loadInputFiles)
         self.btn_clear_input.clicked.connect(self.clearInputFiles)
 
+        # action en basculant vers d'autres onglets
         self.tabWidget.currentChanged.connect(self.next)
 
+        # action en cliquant sur le bouton "..." de sélection de la répertoire de sortie
         self.btn_pathOutput.clicked.connect(self.selectOutputDir)
+
+        # action en cochant la case "Sélectionner tout"
+        self.select_all.stateChanged.connect(self.selectAll)
+
+        # action en cliquant sur le bouton "Excecuter" et "Annuler"
         self.btn_execute.clicked.connect(self.run_model)
         self.btn_cancel.clicked.connect(self.cancel)
-        self.cancel = False
+        # self.cancel = False
 
+        # Initialisation du tableau Paramètres KL
         rows_gite_larvaires = ["Lieu","Surface des plans d'eau (m2)","Surface des rivières (m2)","Surface des cultures agricoles (m2)",
                                 "Surface des rizières (m2)","Surface totale (m2)", "nombre de population (hab)"]
         col_gite_larvaires = ["Gîte larvaire"]
@@ -46,6 +52,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.table_gites.setHorizontalHeaderLabels(col_gite_larvaires)
         self.table_gites.setVerticalHeaderLabels(rows_gite_larvaires)
 
+        # Initialisation du tableau Paramètres Météo
         columns = ["Précipitations", "Températures"]
         rows = ["Lieu", "Année", "Mois", "Jour", "Valeur"]
         self.table_meteo.setColumnCount(len(columns))
@@ -53,8 +60,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.table_meteo.setHorizontalHeaderLabels(columns)
         self.table_meteo.setVerticalHeaderLabels(rows)
 
-        frequence_display = ["jours", "mois"]
-        self.frequence.addItems(frequence_display)
+        # Iintialsation des paramètres de sortie
+        self.frequence.addItems(["jours", "mois"])
         self.lastdate.toggled.connect(lambda:self.btnstate(self.lastdate))
         self.multidate.toggled.connect(lambda:self.btnstate(self.multidate))
         self.lastdate.setChecked(True)
@@ -159,7 +166,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def notNumericParamKL(self, paramKL):
         for i, column in enumerate(paramKL):
-            if not is_numeric_dtype(self.inputParams.shp[column]):
+            if not pd.api.types.is_numeric_dtype(self.inputParams.shp[column]):
                 button = QMessageBox.information(
                     self.centralwidget,
                     "Message d'erreur",
@@ -171,7 +178,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for i, column in enumerate(paramMeteo):
             if not column or (i == 1 and self.radioBtn_weekly.isChecked()):
                 continue
-            elif not is_numeric_dtype(df[column]):
+            elif not pd.api.types.is_numeric_dtype(df[column]):
                 button = QMessageBox.information(
                     self.centralwidget,
                     "Message d'erreur",
@@ -262,33 +269,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.bdate_output.setEnabled(False)
          else:
             self.multidate.setChecked(True)
-
-    # def addParamKL(self):
-    #     rowPosition = self.table_gites.rowCount()
-    #     self.table_gites.insertRow(rowPosition)
-    #     self.updateParamKLRow(row,self.inputParams.shp.columns)
-    #
-    #     newHeader, ok = QInputDialog.getText(self,'Ajouter un gite larvaire','Nom du Gite:',)
-    #     if ok:
-    #         self.table_gites.setVerticalHeaderItem(rowPosition,QTableWidgetItem(newHeader))
-    #
-    # def removeParamKL(self):
-    #     lastRow = self.table_gites.rowCount() - 1
-    #     if lastRow > 5:
-    #         self.table_gites.removeRow(lastRow)
-
-
-
-
-
-
-
-
-
-
-
-
-
       if b.text() == "Pour une période":
          if b.isChecked() :
             self.frequence_display.setEnabled(True)
@@ -318,17 +298,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             path = self.createOutputPath(".kml",self.inputParams.filename)
             self.inputParams.setKmlExport(path)
 
+        # Si la période de sortie est multidate
         if self.multidate.isChecked():
-            days = 1
-            # si frequence de sortie est "tous les mois"
-            if self.frequence.currentIndex() == 1 :
-                days = 30
-            frequence_display = self.frequence_display.value() * days
-            self.inputParams.setFrequence_display(frequence_display)
+            # si frequence de sortie est "tous les mois", alors fréquence de sortie = nb *30 jours
+            days = 1 if self.frequence.currentIndex() == 0 else 30
+            self.inputParams.setFrequence_display( self.frequence_display.value() * days)
             self.inputParams.setBDateOutput(self.bdate_output.date(),self.bdate_output.minimumDate().addYears(-1))
+
+        # Si la période de sortie est une date
         else:
             self.inputParams.setFrequence_display(7) # Par défaut la fréquence de sortie est tous les 7 jours
-            # Si la sortie est pour une date alors la date du début des sorties = 7 avant la date de fin des sorties
+            # Mettre la date du début des sorties 7 avant la date de fin des sorties
             self.inputParams.setBDateOutput(self.edate.date().addDays(-7), self.bdate_output.minimumDate().addYears(-1))
 
     def setTextEdit(self):
@@ -336,28 +316,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         msg += "\n-----------Paramètres d'entrée-----------\n"
         msg += "Fichier environnemental source: "+ self.parcelFileName.text() +"\n"
-        msg += "\tNombre de parcelles à traiter: "+ str(self.inputParams.shp.shape[0]) +"\n"
+        msg += "Nombre de parcelles à traiter:\t"+ str(self.inputParams.shp.shape[0]) +"\n\n"
         msg += "Données de précipitations source: "+ self.rainFileName.text() +"\n"
-        msg += "\tTaille des données de précipitations: " + str(len(self.inputParams.rainCSVData)) +" lignes\n"
+        msg += "Taille des données de précipitations:\t" + str(len(self.inputParams.rainCSVData)) +" lignes\n\n"
         msg += "Données de températures source: "+ self.tempFileName.text() +"\n"
-        msg += "\tTaille des données de températures: " + str(len(self.inputParams.tempCSVData)) +" lignes\n"
+        msg += "Taille des données de températures:\t" + str(len(self.inputParams.tempCSVData)) +" lignes\n"
 
         msg += "\n-----------Paramètres de sortie-----------\n"
         msg += "Répertoire de sortie: "+ self.pathOutput.text() +"\n"
-        msg += "Date de sortie: Tous les "+ str(self.frequence_display.value()) +" "+self.frequence.currentText()
-        msg +=  "de " + self.bdate_output.date().toString("dd/MM/yyyy") + " à " + self.edate.date().toString("dd/MM/yyyy")+ "\n"
+        msg += "Date de sortie:\tTous les "+ str(self.frequence_display.value()) +" "+self.frequence.currentText()
+        msg +=  "\t du " + self.bdate_output.date().toString("dd/MM/yyyy") + " à " + self.edate.date().toString("dd/MM/yyyy")+ "\n"
 
         output_format = ""
         if self.outputSHP.isChecked() :
-            output_format = "".join([output_format,self.outputSHP.text(),";"])
+            output_format = "".join([output_format,self.outputSHP.text(),","])
         if self.outputKML.isChecked() :
-            output_format = "".join([output_format,self.outputKML.text(),";"])
+            output_format = "".join([output_format,self.outputKML.text(),","])
         if self.outputCSV.isChecked() :
-            output_format = "".join([output_format,self.outputCSV.text(),";"])
-        msg += "Format de sortie: " + output_format
+            output_format = "".join([output_format,self.outputCSV.text(),","])
+        msg += "Format de sortie:\t" + output_format
 
         self.textEdit.setText(msg)
-        # QtCore.QCoreApplication.processEvents()
 
     def next(self):
         i = self.tabWidget.currentIndex()
@@ -367,6 +346,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.tabWidget.setCurrentIndex(0)
 
         if i == 2 :
+            self.bdate_output.setStyleSheet("border: 1px solid white")
+            self.date_intro.setStyleSheet("border: 1px solid white")
+
             if self.kl_table_error() :
                 self.tabWidget.setCurrentIndex(0)
 
@@ -375,10 +357,41 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 button = QMessageBox.information(
                     self.centralwidget,
                     "Message d'erreur",
-                    "Remplir les paramètres de sortie réquis",
+                    "Remplir ce paramètre de sortie réquis",
                     )
+
+            elif self.bdate_output.date() and self.bdate_output.date() >= self.edate.date() :
+                self.tabWidget.setCurrentIndex(1)
+                self.bdate_output.setStyleSheet("border: 1px solid red")
+                button = QMessageBox.information(
+                    self.centralwidget,
+                    "Message d'erreur",
+                    "La date du début de sortie devrait être ultérieure à la date de fin de sortie",
+                    )
+
+            elif self.nb_pers_infectes.value() != 0 and self.date_intro.date() > self.edate.date():
+                self.date_intro.setStyleSheet("border: 1px solid red")
+                self.tabWidget.setCurrentIndex(1)
+                button = QMessageBox.information(
+                    self.centralwidget,
+                    "Message d'erreur",
+                    "La date d'introduction des premiers cas infectés devrait être ultérieure à la date de fin de sortie",
+                    )
+
             else:
                 self.setTextEdit()
+
+    def getValueToExport(self):
+        checked_columns = []
+        for checkbox in self.groupBox_col_export.findChildren(QCheckBox):
+            if checkbox.isChecked() and checkbox != self.select_all:
+                checked_columns.append(checkbox.objectName())
+        return checked_columns
+
+    def selectAll(self):
+        state = self.select_all.checkState()
+        for checkbox in self.groupBox_col_export.findChildren(QCheckBox):
+            checkbox.setCheckState(state)
 
     def cancel(self):
         self.cancel = True
@@ -392,38 +405,42 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if reply == QMessageBox.StandardButton.Yes:
             # 1) Instanciation des datafacers : outputs
             self.setOutputParam()
-            self.textEdit.append("Initialisation ... ")
+            self.textEdit.append("\n-----------Lancement de la simulation-----------")
 
             # 2) Initialisation
-            shp_list = gpd.GeoDataFrame()
-            kml_list = gpd.GeoDataFrame()
+            # # Initialisation des valeurs des dates et celle de la barre de progression
             now = self.inputParams.bdate
-            day = 0
-            self.textEdit.append("Simulation start: "+ now.toString("dd/MM/yyyy"))
+            day = progressBar_value = 0
+            progressBar_step_value = 100 / now.daysTo(self.edate.date())
+            ## Obtenir les paramètresKL, les paramètres météo, les cas infectés
             paramKL = self.getParamKL()
             paramMeteo = self.getParamMeteo()
+            if self.radioBtn_weekly.isChecked():
+                freq_meteo = "week"
+            elif self.radioBtn_monthly.isChecked():
+                freq_meteo = "month"
+            elif self.radioBtn_daily.isChecked():
+                freq_meteo = "day"
             cas_infectes = {
              "date_intro": self.date_intro.date(), # date d'introduction d'un premier cas infecte humI
              "nb_pers": self.nb_pers_infectes.value(), # Nbre de personne initialement infecté
             }
             # # Initialisation des paramètres de résultats
             self.inputParams.initialisation(paramKL)
+            # # Création des dataframes de sauvegarde des résultats
+            shp_list = gpd.GeoDataFrame()
+            kml_list = gpd.GeoDataFrame()
 
             # 3) Simulation
             # # Boucle sur les jours
+            self.cancel = False
             while now <= self.edate.date() and not self.cancel:
-                if self.radioBtn_weekly.isChecked():
-                    freq_meteo = "week"
-                elif self.radioBtn_monthly.isChecked():
-                    freq_meteo = "month"
-                elif self.radioBtn_daily.isChecked():
-                    freq_meteo = "day"
-
                 if now.daysTo(cas_infectes["date_intro"]) == 0:
                     self.textEdit.append("Introduction de "+ str(cas_infectes["nb_pers"]) + " cas de paludisme: " + now.toString("dd/MM/yyyy"))
 
                 # Boucle sur les parcelles
                 test_display = self.inputParams.simulation(now,freq_meteo,day,paramKL,paramMeteo,cas_infectes)
+                QtCore.QCoreApplication.processEvents()
                 # Fin de la boucle sur les parcelles
 
                 # Sauvegarde du résultat
@@ -433,25 +450,33 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     if (self.outputSHP.isChecked() or self.outputCSV.isChecked()) and self.multidate.isChecked():
                         shp_list = pd.concat([shp_list,self.inputParams.shp], ignore_index = True)
 
+                # Mise à jour de la valeur de day, now et de la barre de progression
                 day += 1
                 now = now.addDays(1)
+                progressBar_value += progressBar_step_value
+                self.progressBar.setValue(int(progressBar_value))
             # Fin de la boucle sur les jours
-
-            # # 5) Export Result
+            
             if not self.cancel:
+                # 4) Export Result
+                self.textEdit.append("Export des résultats ...")
+
                 # Obtenir les colonnes résultats choisit par l'utilisateur
-                checked_columns = []
-                for checkbox in self.groupBox_col_export.findChildren(QCheckBox):
-                    if checkbox.isChecked():
-                        checked_columns.append(checkbox.objectName())
-                # exporter les résultats
-                self.inputParams.exportResult(shp_list,kml_list,self.multidate.isChecked(), checked_columns)
-                self.textEdit.append("Simulation terminée !")
-                button = QMessageBox.information(
-                    self.centralwidget,
-                    "Status",
-                    "Simulation terminée !",
-                    )
+                checked_columns = self.getValueToExport()
+                try:
+                    self.inputParams.exportResult(shp_list,kml_list,self.multidate.isChecked(), checked_columns)
+                    self.textEdit.append("Simulation terminée!")
+                    button = QMessageBox.information(
+                        self.centralwidget,
+                        "Status",
+                        "Simulation terminée !",
+                        )
+                except PermissionError:
+                    button = QMessageBox.information(
+                        self.centralwidget,
+                        "Status",
+                        "Fichier d'export déjà ouvert! Veuillez fermer ce fichier CSV (ou SHP ou KML) puis recommencer la simulation!",
+                        )
             else:
                 self.textEdit.append("Simulation interrompue !")
                 button = QMessageBox.information(
@@ -461,6 +486,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     )
                 self.cancel = False
 
+            # Sauvegarde des textes dans un fichier log
+            log_path = self.createOutputPath(".txt",self.inputParams.filename+"_log")
+            with open(log_path,"w") as f:
+                f.write(self.textEdit.toPlainText())
 
 def main():
     app = QApplication(sys.argv)
