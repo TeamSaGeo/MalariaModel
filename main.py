@@ -399,8 +399,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def run_model(self):
         reply = QMessageBox.question(
             self.centralwidget,
-            "Lancement du modèle ...",
-            "Voulez vous lancer le modèle?",
+            "Lancement de la simulation ...",
+            "Voulez vous lancer la simulation?",
         )
         if reply == QMessageBox.StandardButton.Yes:
             # 1) Instanciation des datafacers : outputs
@@ -456,7 +456,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 progressBar_value += progressBar_step_value
                 self.progressBar.setValue(int(progressBar_value))
             # Fin de la boucle sur les jours
-            
+
             if not self.cancel:
                 # 4) Export Result
                 self.textEdit.append("Export des résultats ...")
