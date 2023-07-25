@@ -333,7 +333,7 @@ class SEIRModel:
                 elif d >= 100 and d < 200:
                     self.shp.loc[index, "Class"] = 5
                 elif d >= 200 and d < 500:
-                    shp.loc[index, "Class"] = 6
+                    self.shp.loc[index, "Class"] = 6
                 elif d >= 500 and d < 1000 :
                     self.shp.loc[index, "Class"] = 7
                 elif d >= 1000 and d < 2000:

@@ -395,6 +395,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def cancel(self):
         self.cancel = True
+        self.btn_execute.setEnabled(True)
 
     def run_model(self):
         reply = QMessageBox.question(
@@ -433,6 +434,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             # 3) Simulation
             # # Boucle sur les jours
+            self.btn_execute.setEnabled(False)
             self.cancel = False
             while now <= self.edate.date() and not self.cancel:
                 if now.daysTo(cas_infectes["date_intro"]) == 0:
@@ -486,6 +488,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     )
                 self.cancel = False
 
+            self.btn_execute.setEnabled(True)
             # Sauvegarde des textes dans un fichier log
             log_path = self.createOutputPath(".txt",self.inputParams.filename+"_log")
             with open(log_path,"w") as f:
