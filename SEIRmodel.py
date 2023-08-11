@@ -30,7 +30,7 @@ class SEIRModel:
         if self.bdate < minimumDate:
             self.bdate = minimumDate
 
-    def initialisation(self, paramKL):
+    def initialisation(self, nbPop):
         self.shp["oeufs"] = 10000000.0
         self.shp["larves"] = 0.0
         self.shp["nymphes"] = 0.0
@@ -43,7 +43,7 @@ class SEIRModel:
         self.shp["a2o"] = 0.0
         self.shp["ahE"] = 0.0
         self.shp["ahI"] = 0.0
-        self.shp["humS"] = self.shp[paramKL[6]]
+        self.shp["humS"] = self.shp[nbPop]
         self.shp["humE"] = 0.0
         self.shp["humI"] = 0.0
         self.shp["humR"] = 0.0
@@ -83,7 +83,6 @@ class SEIRModel:
 
         if freq_meteo == "week":
             w = self.getWeekNumber(now.weekNumber()[0]) # Obtenir la semaine courante de l'année (exemple "S1")
-            # w7 = self.getWeekNumber(now.addDays(-7).weekNumber()[0]) # Obtenir la semaine précédent de l'année (exemple "S52")
 
         # Les paramètres du modèle
         TE = 12.9
@@ -110,6 +109,7 @@ class SEIRModel:
         DT = 0.1
         npastemps = int(1/DT)
 
+        # Boucle sur les parcelles
         for index, row in self.shp.iterrows():
             lieu = row[paramKL[0]]
 
@@ -119,16 +119,6 @@ class SEIRModel:
             if freq_meteo == "week":
                 temperature = self.getWeeklyParamValue(self.tempCSVData, paramMeteo[1],lieu,now.year(),w)
                 rain = self.getWeeklyParamValue(self.rainCSVData,paramMeteo[0],lieu,now.year(),w)
-                # # Cumul des pluies de la semaine précédente
-                # if w == "s01" :
-                #     if now != self.bdate:
-                #         previous_rain = self.getWeeklyParamValue(self.rainCSVData,paramMeteo[0],lieu,now.year(),w)
-                #     else:
-                #         previous_rain = rain
-                #     print(now, (now.year() - 1), w7, previous_rain)
-                # else:
-                #     previous_rain = self.getWeeklyParamValue(self.rainCSVData, paramMeteo[0],lieu,now,w7)
-
             # Obtenir les données journalières ou mensuelles
             else:
                 temperature = self.getMonthlyorDailyParamValue(self.tempCSVData, paramMeteo[1], lieu, now)
@@ -136,7 +126,6 @@ class SEIRModel:
             # normalisation des données de précipitations
             pnorm = (rain - rain_min) / (rain_max - rain_min)
 
-            # Updatefunction
             # Egg development
             if temperature > TE :
                 fegg1 = (temperature - TE)
@@ -158,7 +147,7 @@ class SEIRModel:
             if temperature > TAg :
                 fag1= temperature - TAg
                 fag = fag1 / TDDAg
-            else:
+            else:               # ajout sarah
                 fag = 0
 
             # Taux de mortalite des larves et des nymphes
@@ -180,7 +169,7 @@ class SEIRModel:
             surfCult = row[paramKL[3]]
             surfRiz = row[paramKL[4]]
             surfTot = row[paramKL[5]]
-            nbrepop= row[paramKL[6]]
+            nbrepop= row[paramKL[6]+str(now.year())]
 
             # Si les valeurs des gites larvaires sont nulles alors les valeurs des paramètres KL seront nulles
             klvarRiv = int(surfRiv * 1914 * 0.9)  if not math.isnan(surfRiv) else surfRiv # 1914 larves/m2 ==> nombre de larves d'Anopheles max par m2
@@ -230,12 +219,8 @@ class SEIRModel:
             x10 = row["a2o"]
             x11aE = row["ahE"]
             x11aI = row["ahI"]
-            if now.daysTo(cas_infectes["date_intro"]) == 0:
-                x12I = cas_infectes["nb_pers"]
-                x12S = row["humS"] - x12I
-            else:
-                x12I = row["humI"]
-                x12S = row["humS"]
+            x12I = row["humI"]
+            x12S = row["humS"]
             x12E = row["humE"]
             x12R = row["humR"]
 
@@ -279,11 +264,15 @@ class SEIRModel:
                 x10 += DT * t1
                 x11aE += DT * u1
                 x11aI += DT * u2
-                x12S += DT * v1
+                x12S += (DT * v1)
                 x12E += DT * v2
                 x12I += DT * v3
                 x12R += DT * v4
             # Fin boucle de résolution des équations
+
+            if now.daysTo(cas_infectes["date_intro"]) == 0:
+                x12I = cas_infectes["nb_pers"]
+                x12S = row["humS"] - x12I
 
             self.shp.loc[index, "oeufs"] = x1
             self.shp.loc[index, "larves"] = x2
@@ -297,29 +286,28 @@ class SEIRModel:
             self.shp.loc[index, "a2o"] = x10
             self.shp.loc[index, "ahE"] = x11aE
             self.shp.loc[index, "ahI"] = x11aI
-            self.shp.loc[index, "humS"] = int(max(0,x12S))
-            self.shp.loc[index, "humE"] = int(max(0,x12E))
-            self.shp.loc[index, "humI"] = int(max(0,x12I))
-            self.shp.loc[index, "humR"] = int(max(0,x12R))
+            self.shp.loc[index, "humS"] = max(0,x12S)
+            self.shp.loc[index, "humE"] = max(0,x12E)
+            self.shp.loc[index, "humI"] = max(0,x12I)
+            self.shp.loc[index, "humR"] = max(0,x12R)
             self.shp.loc[index, "fkl"] = fkl
-
             # CalculAh
             self.shp.loc[index, "ah"] = x5 + x8
-
             # calculAtot
             self.shp.loc[index, "adultestot"] = x4 + x5 + x6 + x7 + x8 + x9 + x10
 
             # Renseignement des dates de la validité de la prédiction pour l'export
+            french = QtCore.QLocale(QtCore.QLocale.Language.French, QtCore.QLocale.Country.France)
             self.shp.loc[index, "date_debut"] = now.toString("yyyy-MM-dd")
             self.shp.loc[index, "date_fin"] = fin.toString("yyyy-MM-dd")
             if now.month() != fin.month() and now.daysTo(QtCore.QDate(fin.year(), fin.month(), 1)) > QtCore.QDate(fin.year(), fin.month(), 1).daysTo(fin):
-                self.shp.loc[index, "mois"] = now.toString("MMM")
+                self.shp.loc[index, "mois"] = french.toString(now, "MMMM")
                 self.shp.loc[index, "année"] = now.toString("yyyy")
-                self.shp.loc[index, "mois-année"] = now.toString("MMM-yy")
+                self.shp.loc[index, "mois-année"] = french.toString(now, "MMMM-yy")
             else:
-                self.shp.loc[index, "mois"] = fin.toString("MMM")
+                self.shp.loc[index, "mois"] = french.toString(fin, "MMMM")
                 self.shp.loc[index, "année"] = fin.toString("yyyy")
-                self.shp.loc[index, "mois-année"] = fin.toString("MMM-yy")
+                self.shp.loc[index, "mois-année"] = french.toString(fin, "MMMM-yy")
 
             if self.kmlExport and now > self.bdate_output and test_display == 0 :
                 d = self.shp.loc[index, "adultestot"] / self.shp.loc[index, paramKL[5]] * 10000
@@ -352,6 +340,7 @@ class SEIRModel:
                 self.shp.loc[index, "description"] = styleAtot
                 self.shp.loc[index, "begin"] = now.toString("YYYY-MM-dd")
                 self.shp.loc[index, "end"] = _fin.toString("YYYY-MM-dd")
+        # Fin de la boucle sur les Parcelles
 
         return test_display
 
@@ -365,6 +354,7 @@ class SEIRModel:
                 self.shp.to_file(self.kmlExport, driver='KML')
 
         columnsName = ["geometry","mdg_com_co", "mdg_fkt_co", "fokontany","date_debut","date_fin","mois", "année", "mois-année"] + checked_columns
+
         # b) Export SHP
         if self.shpExport:
             if multidate:
@@ -377,7 +367,7 @@ class SEIRModel:
         if self.csvExport:
             if multidate:
                 shp_list = shp_list.loc[:,shp_list.columns.isin(columnsName)]
-                shp_list.drop('geometry',axis=1).to_csv(self.csvExport, sep=";", decimal=",", index=False, encoding="utf-8")
+                shp_list.drop('geometry',axis=1).to_csv(self.csvExport, sep=";", decimal=",", index=False, encoding="utf-8-sig")
             else:
                 self.shp= self.shp.loc[:,self.shp.columns.isin(columnsName)]
-                self.shp.drop('geometry',axis=1).to_csv(self.csvExport, sep=";", decimal=",", index=False, encoding="utf-8")
+                self.shp.drop('geometry',axis=1).to_csv(self.csvExport, sep=";", decimal=",", index=False, encoding="utf-8-sig")

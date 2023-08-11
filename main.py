@@ -44,8 +44,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # self.cancel = False
 
         # Initialisation du tableau Paramètres KL
-        rows_gite_larvaires = ["Lieu","Surface des plans d'eau (m2)","Surface des rivières (m2)","Surface des cultures agricoles (m2)",
-                                "Surface des rizières (m2)","Surface totale (m2)", "nombre de population (hab)"]
+        rows_gite_larvaires = ["Code Commune","Surface des plans d'eau (m2)","Surface des rivières (m2)","Surface des cultures agricoles (m2)",
+                                "Surface des rizières (m2)","Surface totale (m2)", "préfixe du nombre de population (hab)"]
         col_gite_larvaires = ["Gîte larvaire"]
         self.table_gites.setColumnCount(len(col_gite_larvaires))
         self.table_gites.setRowCount(len(rows_gite_larvaires))
@@ -54,7 +54,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Initialisation du tableau Paramètres Météo
         columns = ["Précipitations", "Températures"]
-        rows = ["Lieu", "Année", "Mois", "Jour", "Valeur"]
+        rows = ["Commune", "Année", "Mois", "Jour", "Valeur"]
         self.table_meteo.setColumnCount(len(columns))
         self.table_meteo.setRowCount(len(rows))
         self.table_meteo.setHorizontalHeaderLabels(columns)
@@ -120,10 +120,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.updateParamMeteo(rainCSVData.columns, tempCSVData.columns)
 
     def updateParamKLRow(self,items):
-        for row in range(self.table_gites.rowCount()):
+        for row in range(self.table_gites.rowCount()-1):
             field_name = QComboBox()
             field_name.addItems(items)
             self.table_gites.setCellWidget(row, 0, field_name)
+        self.table_gites.setCellWidget(self.table_gites.rowCount()-1, 0, QLineEdit(placeholderText="NbHab"))
 
     def updateParamMeteo(self,precip_fields,temp_fields):
         for row in range(self.table_meteo.rowCount()):
@@ -144,8 +145,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def getParamKL(self):
         paramKL = []
-        for row in range (self.table_gites.rowCount()):
+        for row in range (self.table_gites.rowCount()-1):
             paramKL.append(self.table_gites.cellWidget(row,0).currentText())
+        paramKL.append(self.table_gites.cellWidget(self.table_gites.rowCount()-1,0).text())
         return paramKL
 
     def getParamMeteo(self):
@@ -187,11 +189,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 return True
 
     def kl_table_error(self):
-        # Obtenir les paramètres KL
+        # Obtenir les paramètres KL et météo
         try:
             paramKL = self.getParamKL()
             rainfall, temperature = self.getParamMeteo()
-        except:
+        except Exception as error:
+            print(error)
             button = QMessageBox.information(
                 self.centralwidget,
                 "Message d'erreur",
@@ -213,15 +216,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             button = QMessageBox.information(
                 self.centralwidget,
                 "Message d'erreur",
-                "Choisir des différents valeurs pour chaque colonne des paramètres KL ou météo",
+                "Choisir des différents valeurs pour chaque ligne des paramètres KL ou météo",
                 )
             return True
 
-        # si les paramètres KL sont de types non entiers
-        if self.notNumericParamKL(paramKL[1:]) or self.notNumericParamMeteo(rainfall[1:], self.inputParams.rainCSVData) or self.notNumericParamMeteo(temperature[1:], self.inputParams.tempCSVData):
+        # si les paramètres KL sont de types non numérique
+        if self.notNumericParamKL(paramKL[1:-1]) or self.notNumericParamMeteo(rainfall[1:], self.inputParams.rainCSVData) or self.notNumericParamMeteo(temperature[1:], self.inputParams.tempCSVData):
             return True
 
-        # mettre à jour les limites des dates de débuts et de fin de sorties
+        # définir les limites des dates de débuts et de fin de sorties
         temp_year_min = self.inputParams.tempCSVData[temperature[1]].min() + 1 # L'année suivant l'année minimum
         temp_year_max = self.inputParams.tempCSVData[temperature[1]].max()
         bdate_output_min = QtCore.QDate(temp_year_min,1,1)
@@ -233,8 +236,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.date_intro.setMinimumDate(QtCore.QDate(temp_year_min-1,1,1))
         self.date_intro.setMaximumDate(bdate_output_max)
 
-        npop_max = self.inputParams.shp[paramKL[6]].max(numeric_only=True)
-        self.nb_pers_infectes.setMaximum(npop_max)
+        # vérifier si la prefixe du nombre de population existe
+        try:
+            column_npop = self.inputParams.shp[paramKL[6]+ str(temp_year_min-1)]
+        except:
+            button = QMessageBox.information(
+                self.centralwidget,
+                "Message d'erreur",
+                "Le préfixe du nombre de population (hab) n'existe pas dans le shapefile.",
+                )
+            return True
+        # vérifier si la prefixe du nombre de population est de type numérique
+        if not pd.api.types.is_numeric_dtype(column_npop):
+            button = QMessageBox.information(
+                self.centralwidget,
+                "Message d'erreur",
+                "Choisir une colonne de type numérique pour le champ " + self.table_gites.verticalHeaderItem(6).text(),
+                )
+            return True
+        # mettre le nombre maximal de personnes infectées maximal égal au nombre maximal de population de l'année du début de la simulation
+        else:
+            self.nb_pers_infectes.setMaximum(column_npop.max(numeric_only=True))
 
         return False
 
@@ -427,7 +449,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
              "nb_pers": self.nb_pers_infectes.value(), # Nbre de personne initialement infecté
             }
             # # Initialisation des paramètres de résultats
-            self.inputParams.initialisation(paramKL)
+            self.inputParams.initialisation(paramKL[6]+str(now.year()))
             # # Création des dataframes de sauvegarde des résultats
             shp_list = gpd.GeoDataFrame()
             kml_list = gpd.GeoDataFrame()
@@ -462,10 +484,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if not self.cancel:
                 # 4) Export Result
                 self.textEdit.append("Export des résultats ...")
-
                 # Obtenir les colonnes résultats choisit par l'utilisateur
                 checked_columns = self.getValueToExport()
                 try:
+                    shp_list = shp_list.round(0)
                     self.inputParams.exportResult(shp_list,kml_list,self.multidate.isChecked(), checked_columns)
                     self.textEdit.append("Simulation terminée!")
                     button = QMessageBox.information(
