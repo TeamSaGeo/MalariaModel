@@ -420,7 +420,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 button = QMessageBox.information(
                     self.centralwidget,
                     "Message d'erreur",
-                    "La date de l'aspertion intra domiciliaire devrait être ultérieure à la date de fin de sortie",
+                    "La date de l'aspersion intra domiciliaire devrait être ultérieure à la date de fin de sortie",
                     )
 
             else:
@@ -517,7 +517,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 if now.daysTo(lutte["date_moustiquaire"]) == 0 and lutte["couverture_moustiquaire"] > 0:
                     self.textEdit.append(now.toString("dd/MM/yyyy") + ": Distribution des moustiquaires sur "+ str(self.couverture_moustiquaire.value()) + "% de couverture")
                 if now.daysTo(lutte["date_irs"]) == 0 and lutte["couverture_irs"] > 0:
-                    self.textEdit.append(now.toString("dd/MM/yyyy")+ ": Aspertion intra domiciliaire sur "+ str(self.couverture_irs.value()) + "% de couverture")
+                    self.textEdit.append(now.toString("dd/MM/yyyy")+ ": aspersion intra domiciliaire sur "+ str(self.couverture_irs.value()) + "% de couverture")
 
                 nb_days_moustiquaire = lutte["date_moustiquaire"].daysTo(now)
                 mort_due_moustiquaire = 0
