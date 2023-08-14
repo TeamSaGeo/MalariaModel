@@ -36,7 +36,9 @@ Sommaire
 
 [Etape](#br5)[ ](#br5)[3](#br5)[ ](#br5)[:](#br5)[ ](#br5)[Simulation.......................................................................................................](#br5)[ ](#br5)[4](#br5)
 
-[**3.**](#br6)[** ](#br6)[Résultat**](#br6)[** ](#br6)[de**](#br6)[** ](#br6)[la**](#br6)[** ](#br6)[simulation**](#br6)[** ](#br6)[.........................................................................................](#br6)[ ](#br6)[5](#br6)
+[**3.**](#br7)[** ](#br7)[Résultat**](#br7)[** ](#br7)[de**](#br7)[** ](#br7)[la**](#br7)[** ](#br7)[simulation**](#br7)[** ](#br7)[.........................................................................................](#br7)[ ](#br7)[6](#br7)
+
+[Description](#br8)[ ](#br8)[des](#br8)[ ](#br8)[champs.................................................................................................](#br8)[ ](#br8)[7](#br8)
 
 **1. A propos**
 
@@ -66,7 +68,7 @@ format du fichier à exporter
 
 3\. **La simulation** permettant de lancer le modèle
 
-Page 1 sur 6
+Page 1 sur 7
 
 
 
@@ -136,7 +138,7 @@ Jour (si données journalières)
 
 Valeur (en mm si précipitation, en °C si température)
 
-Page 2 sur 6
+Page 2 sur 7
 
 
 
@@ -174,31 +176,51 @@ ainsi que la fréquence des sorties (tous les n jours ou tous les n mois)
 
 **Le format de sortie :** sous format shapefile et/ou csv et/ou kml
 
-•
+**La date et le nombre de personnes initialement infectées :**
 
 •
 
 •
 
-**La date et le nombre de personnes initialement infectées :** entre 0 et le nombre
+•
+
+o la date se situe entre la date de début de simulation et la date de fin de sortie
+
+o Le nombre de personnes initialement infectées varie entre 0 et le nombre
 
 maximal de population de l’année du début de la simulation
 
 •
 
+•
+
+•
+
+**La date et le taux de couverture de distribution des moustiquaires :**
+
+o la date se situe entre la date de début de simulation et la date de fin de sortie
+
+o le taux est entre 0 à 100 %
+
+**La date et le taux de couverture d’aspersion intra domiciliaire :**
+
+o la date se situe entre la date de début de simulation et la date de fin de sortie
+
+o le taux est entre 0 à 100 %
+
 **Les valeurs à exporter :** l’utilisateur devrait choisir au moins un des valeurs à
 
 exportés listés en bas de l’onglet (moustiques, humain, capacité de charge)
 
-Page 3 sur 6
+Si les valeurs choisis sont valides, alors l’utilisateur peut passer à l’onglet suivant
+
+« Simulation ». Sinon, un message d’erreur s’affiche.
+
+Page 3 sur 7
 
 
 
 <a name="br5"></a> 
-
-Si les valeurs choisis sont valides, alors l’utilisateur peut passer à l’onglet suivant
-
-« Simulation ». Sinon, un message d’erreur s’affiche.
 
 Etape 3 : Simulation
 
@@ -210,6 +232,12 @@ Pour lancer le modèle, l’utilisateur devrait cliquer sur le bouton « Exécut
 
 de dialogue apparaît ensuite pour confirmer la réponse de l’utilisateur.
 
+Page 4 sur 7
+
+
+
+<a name="br6"></a> 
+
 Une fois la simulation lancée, l’outil calcule les valeurs à exportées puis exporte les résultats
 
 selon les formats de fichier et la fréquence de sortie choisis par l’utilisateur.
@@ -218,15 +246,15 @@ Si les paramètres KL ou les données de température ou de précipitation sont 
 
 alors les valeurs des résultats correspondantes seront nulles.
 
-Page 4 sur 6
-
-
-
-<a name="br6"></a> 
-
 L’utilisateur peut annuler la simulation en cliquant sur le bouton « Annuler ». Sinon, une boîte
 
 de dialogue s’affiche lorsque la simulation est terminée.
+
+Page 5 sur 7
+
+
+
+<a name="br7"></a> 
 
 **3. Résultat de la simulation**
 
@@ -236,13 +264,75 @@ l’utilisateur dans l’onglet « Paramètres de sortie ». L’historique du p
 
 simulation y sont stocké également au format texte (.txt).
 
-Page 5 sur 6
+Page 6 sur 7
 
 
 
-<a name="br7"></a> 
+<a name="br8"></a> 
+
+Description des champs
+
+Les noms des champs correspondent aux descriptions suivantes :
+
+**Nom**
+
+**Description**
+
+oeufs
+
+larves
+
+Nombre des oeufs
+
+Nombre des larves
+
+nymphes Nombre des nymphes
+
+adultestot  Nombre des moustiques adultes
+
+a1o
+
+Nombre des moustiques adultes femelles nullipares en recherche de sites de ponte
+
+a2o
+
+ah
+
+ahE
+
+ahI
+
+fkl
+
+humS
+
+humE
+
+humI
+
+humR
+
+Nombre des moustiques adultes femelles pares en recherche de sites de ponte
+
+Nombre des moustiques adultes femelles nullipares et pares en recherche d'hôtes
+
+Nombre des moustiques adultes femelles en recherche d'hôtes exposés
+
+Nombre des moustiques adultes femelles en recherche d'hôtes infectés
+
+Capacité de charge de l'environnement larves et des nymphes
+
+Nombre des humains susceptibles
+
+Nombre des humains exposés
+
+Nombre des humains infectés
+
+Nombre des humains rétablis
 
 Toutes les valeurs numériques exportés sont arrondies à des valeurs en entiers.
 
-Page 6 sur 6
+Les formats des dates sont transcrits en français
+
+Page 7 sur 7
 

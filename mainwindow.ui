@@ -831,7 +831,7 @@
               </font>
              </property>
              <property name="text">
-              <string>humains suceptibles</string>
+              <string>humains susceptibles</string>
              </property>
             </widget>
            </item>
@@ -870,7 +870,7 @@
               </font>
              </property>
              <property name="text">
-              <string>adultes femelles nullipares et pares en recherche d'hotes</string>
+              <string>adultes femelles nullipares et pares en recherche d'hôtes</string>
              </property>
             </widget>
            </item>
@@ -909,7 +909,7 @@
               </font>
              </property>
              <property name="text">
-              <string>adultes femelles en recherche d'hotes infectés</string>
+              <string>adultes femelles en recherche d'hôtes infectés</string>
              </property>
             </widget>
            </item>
@@ -922,7 +922,7 @@
               </font>
              </property>
              <property name="text">
-              <string>adultes femelles en recherche d'hotes exposés</string>
+              <string>adultes femelles en recherche d'hôtes exposés</string>
              </property>
             </widget>
            </item>
