@@ -194,7 +194,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             paramKL = self.getParamKL()
             rainfall, temperature = self.getParamMeteo()
         except Exception as error:
-            print(error)
             button = QMessageBox.information(
                 self.centralwidget,
                 "Message d'erreur",
@@ -235,6 +234,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.edate.setMaximumDate(bdate_output_max)
         self.date_intro.setMinimumDate(QtCore.QDate(temp_year_min-1,1,1))
         self.date_intro.setMaximumDate(bdate_output_max)
+        self.date_moustiquaire.setMinimumDate(QtCore.QDate(temp_year_min-1,1,1))
+        self.date_moustiquaire.setMaximumDate(bdate_output_max)
+        self.date_irs.setMinimumDate(QtCore.QDate(temp_year_min-1,1,1))
+        self.date_irs.setMaximumDate(bdate_output_max)
 
         # vérifier si la prefixe du nombre de population existe
         try:
@@ -370,6 +373,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if i == 2 :
             self.bdate_output.setStyleSheet("border: 1px solid white")
             self.date_intro.setStyleSheet("border: 1px solid white")
+            self.date_moustiquaire.setStyleSheet("border: 1px solid white")
+            self.date_irs.setStyleSheet("border: 1px solid white")
 
             if self.kl_table_error() :
                 self.tabWidget.setCurrentIndex(0)
@@ -400,6 +405,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     "La date d'introduction des premiers cas infectés devrait être ultérieure à la date de fin de sortie",
                     )
 
+            elif self.couverture_moustiquaire.value() != 0 and self.date_moustiquaire.date() > self.edate.date():
+                self.date_moustiquaire.setStyleSheet("border: 1px solid red")
+                self.tabWidget.setCurrentIndex(1)
+                button = QMessageBox.information(
+                    self.centralwidget,
+                    "Message d'erreur",
+                    "La date de distribution des moustiquaires devrait être ultérieure à la date de fin de sortie",
+                    )
+
+            elif self.couverture_irs.value() != 0 and self.date_irs.date() > self.edate.date():
+                self.date_irs.setStyleSheet("border: 1px solid red")
+                self.tabWidget.setCurrentIndex(1)
+                button = QMessageBox.information(
+                    self.centralwidget,
+                    "Message d'erreur",
+                    "La date de l'aspertion intra domiciliaire devrait être ultérieure à la date de fin de sortie",
+                    )
+
             else:
                 self.setTextEdit()
 
@@ -418,6 +441,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def cancel(self):
         self.cancel = True
         self.btn_execute.setEnabled(True)
+
+    def efficacite_physique (self,x, c, d):
+        if  x <= c :
+            f = 1
+        elif x > c and x < d:
+            f = float((0.99 * x + 0.01 * c - d) / (c-d))
+        else :
+            f = 0.01
+        return f
+
+    def efficacite_insecticide (self,x, c, d):
+        if  x <= c :
+            f = 1
+        elif x > c and x < d:
+            f =  (0.01 * (d**(0.05) - c**(0.05)) + 0.99 * (d**(0.05)- x**(0.05))) / (d**(0.05)- c**(0.05))
+        else :
+            f = 0.01
+        return f
 
     def run_model(self):
         reply = QMessageBox.question(
@@ -448,6 +489,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
              "date_intro": self.date_intro.date(), # date d'introduction d'un premier cas infecte humI
              "nb_pers": self.nb_pers_infectes.value(), # Nbre de personne initialement infecté
             }
+            lutte = {
+             "date_moustiquaire": self.date_moustiquaire.date(),
+             "couverture_moustiquaire": self.couverture_moustiquaire.value() / 100,
+             "date_irs": self.date_irs.date(),
+             "couverture_irs": self.couverture_irs.value() /100,
+            }
+            debut_efficacite_moustique = lutte["date_moustiquaire"].daysTo(lutte["date_moustiquaire"].addMonths(7))
+            fin_efficacite_moustique = lutte["date_moustiquaire"].daysTo(lutte["date_moustiquaire"].addYears(3))
+            debut_efficacite_irs = lutte["date_irs"].daysTo(lutte["date_irs"].addMonths(1)) + 15
+            fin_efficacite_irs = lutte["date_irs"].daysTo(lutte["date_irs"].addMonths(6))
+            mortalité_anophele = 0.0714 # 1/14 taux de mortalite sur la moustiquaire, taux de mortalite sur le mur
+
             # # Initialisation des paramètres de résultats
             self.inputParams.initialisation(paramKL[6]+str(now.year()))
             # # Création des dataframes de sauvegarde des résultats
@@ -460,10 +513,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.cancel = False
             while now <= self.edate.date() and not self.cancel:
                 if now.daysTo(cas_infectes["date_intro"]) == 0:
-                    self.textEdit.append("Introduction de "+ str(cas_infectes["nb_pers"]) + " cas de paludisme: " + now.toString("dd/MM/yyyy"))
+                    self.textEdit.append(now.toString("dd/MM/yyyy")+ ": Introduction de "+ str(cas_infectes["nb_pers"]) + " cas de paludisme")
+                if now.daysTo(lutte["date_moustiquaire"]) == 0 and lutte["couverture_moustiquaire"] > 0:
+                    self.textEdit.append(now.toString("dd/MM/yyyy") + ": Distribution des moustiquaires sur "+ str(self.couverture_moustiquaire.value()) + "% de couverture")
+                if now.daysTo(lutte["date_irs"]) == 0 and lutte["couverture_irs"] > 0:
+                    self.textEdit.append(now.toString("dd/MM/yyyy")+ ": Aspertion intra domiciliaire sur "+ str(self.couverture_irs.value()) + "% de couverture")
+
+                nb_days_moustiquaire = lutte["date_moustiquaire"].daysTo(now)
+                mort_due_moustiquaire = 0
+                if lutte["couverture_moustiquaire"] > 0 and nb_days_moustiquaire >= 0:
+                    efficacite_moustiquaire_physique = self.efficacite_physique(nb_days_moustiquaire, debut_efficacite_moustique, fin_efficacite_moustique)
+                    efficacite_moustiquaire_insecticide = self.efficacite_insecticide(nb_days_moustiquaire, debut_efficacite_moustique, fin_efficacite_moustique)
+                    efficacite_moustiquaire = (efficacite_moustiquaire_physique + efficacite_moustiquaire_insecticide) / 2
+                    mort_due_moustiquaire = mortalité_anophele * lutte["couverture_moustiquaire"] * efficacite_moustiquaire
+
+                nb_days_irs = lutte["date_irs"].daysTo(now)
+                mort_due_irs = 0
+                if lutte["couverture_irs"] > 0 and nb_days_irs >= 0:
+                    efficacite_irs = self.efficacite_insecticide(nb_days_irs, debut_efficacite_irs, fin_efficacite_irs)
+                    mort_due_irs = mortalité_anophele * lutte["couverture_irs"] * efficacite_irs
 
                 # Boucle sur les parcelles
-                test_display = self.inputParams.simulation(now,freq_meteo,day,paramKL,paramMeteo,cas_infectes)
+                test_display = self.inputParams.simulation(now,freq_meteo,day,paramKL,paramMeteo,cas_infectes, mort_due_moustiquaire, mort_due_irs)
                 QtCore.QCoreApplication.processEvents()
                 # Fin de la boucle sur les parcelles
 

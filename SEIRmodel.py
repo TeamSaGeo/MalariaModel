@@ -77,7 +77,7 @@ class SEIRModel:
         else:
             return "s" + str(w)
 
-    def simulation(self,now,freq_meteo,day,paramKL,paramMeteo,cas_infectes):
+    def simulation(self,now,freq_meteo,day,paramKL,paramMeteo,cas_infectes,mort_due_moustiquaire, mort_due_irs):
         test_display = math.remainder(day,self.frequence_display)	# pour l'export des donnees tous les n jours
         fin = now.addDays(self.frequence_display - 1)
 
@@ -104,7 +104,7 @@ class SEIRModel:
         om1 = 0.533	# taux d'infection chez les humains (omega 1)
         om2 = 0.09	# taux d'infection chez les Anopheles (omega 2)
         ph = 0.00136	# taux de perte de l'immunité (phi h)
-        th = 0.0714 # 1/14	// taux d'incubation chez les humains (teta h)
+        th = 0.0714 # 1/14 taux d'incubation chez les humains (teta h)
         gh = 0.143 # 1/6.9(Wadjo, 2020) 0.005	// taux de guérison (gamma h) - a verifier
         DT = 0.1
         npastemps = int(1/DT)
@@ -237,15 +237,14 @@ class SEIRModel:
                 m1 = flarvae*x2 - x3*(fml+ fpupae)
                 n1a = math.exp(-muPem*(1+x3/fkl))
                 n1 = fpupae * sexr * x3 * n1a - x4 * (fma + devAem)
-                o1 = devAem*x4 - x5*(fmurma + devAh)
-                p1 = devAh*x5 - x6*(fma + fag)
+                o1 = devAem*x4 - x5*(fmurma + devAh + mort_due_moustiquaire)
+                p1 = devAh*x5 - x6*(fma + fag + mort_due_irs)
                 q1 = fag*x6 - x7*(fmurma + fao)
-                r1 = fao*(x7 + x10) - x8*(fmurma + devAh)
-                s1 = devAh*x8 - x9*(fma + fag)
+                r1 = fao*(x7 + x10) - x8*(fmurma + devAh + mort_due_moustiquaire)
+                s1 = devAh*x8 - x9*(fma + fag + mort_due_irs)
                 t1 = fag*x9 - x10*(fmurma + fao)
-
-                u1 = om2*x12I*(x5+x8)/nbrepop*0.2 - x11aE*(fma + fia)	# équation de aE // rq AT : pas besoin de tp
-                u2 = fia*x11aE - x11aI*(fma + mui)	# résolution de a1
+                u1 = om2*x12I*(x5+x8)/nbrepop*0.2 - x11aE*(fma + fia + mort_due_moustiquaire)	# équation de aE // rq AT : pas besoin de tp
+                u2 = fia*x11aE - x11aI*(fma + mui + mort_due_moustiquaire)	# résolution de a1
                 v1 = ph*x12R - x12S*om1*tp*c*x11aI/nbrepop	# équation de humS // rq AT ici aussi ajout de devAh
                 v2 = x12S*om1*tp*c*x11aI/nbrepop - th*x12E	# équation de humE
     			#v2 = ((om1*tp*x12S)/nbrepop) - th*x12E	# équation de humE // rq AT : il y avait une erreur dans cette equation
