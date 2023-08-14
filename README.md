@@ -1,16 +1,4 @@
-﻿
-Par :
-
-Fanjasoa RAKOTOMANANA
-
-Anthonio RAKOTOARISON
-
-Sarah FAMENONTSOA
-
-Manuel d’utilisation                ALARM Palu
-
-MODÉLISATION DE LA DYNAMIQUE DE POPULATION DES MOUSTIQUES ET DU RISQUE DE TRANSMISSION DU PALUDISME,                                                                                ANNÉE 2023
-![](images/Aspose.Words.411f69dd-9876-4c01-b4cb-8e82095608c8.001.png)![](images/Aspose.Words.411f69dd-9876-4c01-b4cb-8e82095608c8.002.png)
+﻿![](images/Aspose.Words.411f69dd-9876-4c01-b4cb-8e82095608c8.001.png)![](images/Aspose.Words.411f69dd-9876-4c01-b4cb-8e82095608c8.002.png)
 
 
 ![](images/Aspose.Words.411f69dd-9876-4c01-b4cb-8e82095608c8.003.png)
