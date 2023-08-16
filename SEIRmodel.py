@@ -171,20 +171,20 @@ class SEIRModel:
             surfTot = row[paramKL[5]]
             nbrepop= row[paramKL[6]+str(now.year())]
 
-            # Si les valeurs des gites larvaires sont nulles alors les valeurs des paramètres KL seront nulles
-            klvarRiv = int(surfRiv * 1914 * 0.9)  if not math.isnan(surfRiv) else surfRiv # 1914 larves/m2 ==> nombre de larves d'Anopheles max par m2
-            klfixRiv = int(surfRiv * 1914 * 0.1) if not math.isnan(surfRiv) else surfRiv
-            klvarCult = int(surfCult * 1914 * 0.9) if not math.isnan(surfCult) else surfCult
-            klfixCult = int(surfCult * 1914 * 0.1) if not math.isnan(surfCult) else surfCult
-            klvarEau = int(surfEau * 1914 * 0.9) if not math.isnan(surfEau) else surfEau
-            klfixEau = int(surfEau * 1914 * 0.1) if not math.isnan(surfEau) else surfEau
+            # Si les valeurs des gites larvaires sont nulles alors les valeurs des paramètres KL seront 0
+            klvarRiv = int(surfRiv * 1914 * 0.9)  if not math.isnan(surfRiv) else 0 # 1914 larves/m2 ==> nombre de larves d'Anopheles max par m2
+            klfixRiv = int(surfRiv * 1914 * 0.1) if not math.isnan(surfRiv) else 0
+            klvarCult = int(surfCult * 1914 * 0.9) if not math.isnan(surfCult) else 0
+            klfixCult = int(surfCult * 1914 * 0.1) if not math.isnan(surfCult) else 0
+            klvarEau = int(surfEau * 1914 * 0.9) if not math.isnan(surfEau) else 0
+            klfixEau = int(surfEau * 1914 * 0.1) if not math.isnan(surfEau) else 0
 
             m = now.month()
             if (((m >= 1) and (m <= 7)) or ((m >= 10) and (m <= 12))) :
-                klvarRiz = int(surfRiz * 1914 * 0.9) if not math.isnan(surfRiz) else surfRiz
-                klfixRiz = int(surfRiz * 1914 * 0.1) if not math.isnan(surfRiz) else surfRiz
+                klvarRiz = int(surfRiz * 1914 * 0.9) if not math.isnan(surfRiz) else 0
+                klfixRiz = int(surfRiz * 1914 * 0.1) if not math.isnan(surfRiz) else 0
             else :
-            	klfixRiz = int(surfRiz * 1914.0) if not math.isnan(surfRiz) else surfRiz
+            	klfixRiz = int(surfRiz * 1914.0) if not math.isnan(surfRiz) else 0
             	klvarRiz = 0.0
 
             # fkl = kl.doubleValue()
@@ -202,8 +202,11 @@ class SEIRModel:
 
             # taux de piqûre
             try:
-                tp = self.shp.loc[index, "ah"]/self.shp.loc[index, "adultestot"]
-            except :
+                if math.isnan(self.shp.loc[index, "ah"]) or math.isnan(self.shp.loc[index, "adultestot"]) or self.shp.loc[index, "adultestot"] == 0 :
+                    tp = 0
+                else:
+                    tp = self.shp.loc[index, "ah"]/self.shp.loc[index, "adultestot"]
+            except:
                 tp = 0
 
             # initialisation des valeurs résultats par ligne
@@ -273,6 +276,20 @@ class SEIRModel:
                 x12I = cas_infectes["nb_pers"]
                 x12S = row["humS"] - x12I
 
+            # Renseignement des dates de la validité de la prédiction pour l'export
+            french = QtCore.QLocale(QtCore.QLocale.Language.French, QtCore.QLocale.Country.France)
+            self.shp.loc[index, "date_debut"] = now.toString("yyyy-MM-dd")
+            self.shp.loc[index, "date_fin"] = fin.toString("yyyy-MM-dd")
+            # Cas des sorties entre 2 mois ( ex: 25 fev to 03 mars): si nombre de jours entre 25 fev-28 fev > nombre de jours entre 1 mars -03 mars
+            if now.month() != fin.month() and now.daysTo(QtCore.QDate(fin.year(), fin.month(), 1)) > QtCore.QDate(fin.year(), fin.month(), 1).daysTo(fin):
+                self.shp.loc[index, "mois"] = french.toString(now, "MMMM")
+                self.shp.loc[index, "année"] = now.toString("yyyy")
+                self.shp.loc[index, "mois-année"] = french.toString(now, "MMMM-yy")
+            else:
+                self.shp.loc[index, "mois"] = french.toString(fin, "MMMM")
+                self.shp.loc[index, "année"] = fin.toString("yyyy")
+                self.shp.loc[index, "mois-année"] = french.toString(fin, "MMMM-yy")
+
             self.shp.loc[index, "oeufs"] = x1
             self.shp.loc[index, "larves"] = x2
             self.shp.loc[index, "nymphes"] = x3
@@ -294,19 +311,6 @@ class SEIRModel:
             self.shp.loc[index, "ah"] = x5 + x8
             # calculAtot
             self.shp.loc[index, "adultestot"] = x4 + x5 + x6 + x7 + x8 + x9 + x10
-
-            # Renseignement des dates de la validité de la prédiction pour l'export
-            french = QtCore.QLocale(QtCore.QLocale.Language.French, QtCore.QLocale.Country.France)
-            self.shp.loc[index, "date_debut"] = now.toString("yyyy-MM-dd")
-            self.shp.loc[index, "date_fin"] = fin.toString("yyyy-MM-dd")
-            if now.month() != fin.month() and now.daysTo(QtCore.QDate(fin.year(), fin.month(), 1)) > QtCore.QDate(fin.year(), fin.month(), 1).daysTo(fin):
-                self.shp.loc[index, "mois"] = french.toString(now, "MMMM")
-                self.shp.loc[index, "année"] = now.toString("yyyy")
-                self.shp.loc[index, "mois-année"] = french.toString(now, "MMMM-yy")
-            else:
-                self.shp.loc[index, "mois"] = french.toString(fin, "MMMM")
-                self.shp.loc[index, "année"] = fin.toString("yyyy")
-                self.shp.loc[index, "mois-année"] = french.toString(fin, "MMMM-yy")
 
             if self.kmlExport and now > self.bdate_output and test_display == 0 :
                 d = self.shp.loc[index, "adultestot"] / self.shp.loc[index, paramKL[5]] * 10000
