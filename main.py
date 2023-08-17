@@ -54,7 +54,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Initialisation du tableau Paramètres Météo
         columns = ["Précipitations", "Températures"]
-        rows = ["Commune", "Année", "Mois", "Jour", "Valeur"]
+        rows = ["Code Commune", "Année", "Mois", "Jour", "Valeur"]
         self.table_meteo.setColumnCount(len(columns))
         self.table_meteo.setRowCount(len(rows))
         self.table_meteo.setHorizontalHeaderLabels(columns)
@@ -314,14 +314,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.outputSHP.isChecked():
             path = self.createOutputPath(".shp",self.inputParams.filename)
             self.inputParams.setShpExport(path)
+        else:
+            self.inputParams.setShpExport("")
 
         if self.outputCSV.isChecked():
             path = self.createOutputPath(".csv",self.inputParams.filename)
             self.inputParams.setCsvExport(path)
+        else:
+            self.inputParams.setCsvExport("")
 
         if self.outputKML.isChecked():
             path = self.createOutputPath(".kml",self.inputParams.filename)
             self.inputParams.setKmlExport(path)
+        else:
+            self.inputParams.setKmlExport("")
 
         # Si la période de sortie est multidate
         if self.multidate.isChecked():
@@ -476,6 +482,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             now = self.inputParams.bdate
             day = progressBar_value = 0
             progressBar_step_value = 100 / now.daysTo(self.edate.date())
+
             ## Obtenir les paramètresKL, les paramètres météo, les cas infectés
             paramKL = self.getParamKL()
             paramMeteo = self.getParamMeteo()
@@ -517,7 +524,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 if now.daysTo(lutte["date_moustiquaire"]) == 0 and lutte["couverture_moustiquaire"] > 0:
                     self.textEdit.append(now.toString("dd/MM/yyyy") + ": Distribution des moustiquaires sur "+ str(self.couverture_moustiquaire.value()) + "% de couverture")
                 if now.daysTo(lutte["date_irs"]) == 0 and lutte["couverture_irs"] > 0:
-                    self.textEdit.append(now.toString("dd/MM/yyyy")+ ": aspersion intra domiciliaire sur "+ str(self.couverture_irs.value()) + "% de couverture")
+                    self.textEdit.append(now.toString("dd/MM/yyyy")+ ": Aspersion intra domiciliaire sur "+ str(self.couverture_irs.value()) + "% de couverture")
 
                 nb_days_moustiquaire = lutte["date_moustiquaire"].daysTo(now)
                 mort_due_moustiquaire = 0

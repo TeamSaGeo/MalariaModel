@@ -12,7 +12,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(678, 678)
+        MainWindow.resize(710, 678)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -196,7 +196,7 @@ class Ui_MainWindow(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.table_meteo.sizePolicy().hasHeightForWidth())
         self.table_meteo.setSizePolicy(sizePolicy)
-        self.table_meteo.setMinimumSize(QtCore.QSize(270, 220))
+        self.table_meteo.setMinimumSize(QtCore.QSize(300, 220))
         self.table_meteo.setMaximumSize(QtCore.QSize(16777215, 220))
         self.table_meteo.setRowCount(0)
         self.table_meteo.setColumnCount(0)

@@ -8,9 +8,7 @@ class SEIRModel:
         self.shp = shp
         self.rainCSVData = rainCSVData
         self.tempCSVData = tempCSVData
-        self.shpExport = ""
-        self.csvExport = ""
-        self.kmlExport = ""
+        self.french = QtCore.QLocale(QtCore.QLocale.Language.French, QtCore.QLocale.Country.France)
 
     def setShpExport(self,path):
         self.shpExport = path
@@ -31,6 +29,11 @@ class SEIRModel:
             self.bdate = minimumDate
 
     def initialisation(self, nbPop):
+        self.shp["date_debut"] = ""
+        self.shp["date_fin"] = ""
+        self.shp["mois"] = ""
+        self.shp["année"] = ""
+        self.shp["mois-année"] = ""
         self.shp["oeufs"] = 10000000.0
         self.shp["larves"] = 0.0
         self.shp["nymphes"] = 0.0
@@ -156,7 +159,7 @@ class SEIRModel:
 
             # Taux de mortalite des adultes
             fma1 = 0.000148 * temperature * temperature
-            fma = 0.1-0.00667 *temperature + fma1
+            fma = 0.1-0.00667 * temperature + fma1
             if fma<0.033:
                 fma=0.033
 
@@ -277,18 +280,17 @@ class SEIRModel:
                 x12S = row["humS"] - x12I
 
             # Renseignement des dates de la validité de la prédiction pour l'export
-            french = QtCore.QLocale(QtCore.QLocale.Language.French, QtCore.QLocale.Country.France)
             self.shp.loc[index, "date_debut"] = now.toString("yyyy-MM-dd")
             self.shp.loc[index, "date_fin"] = fin.toString("yyyy-MM-dd")
             # Cas des sorties entre 2 mois ( ex: 25 fev to 03 mars): si nombre de jours entre 25 fev-28 fev > nombre de jours entre 1 mars -03 mars
             if now.month() != fin.month() and now.daysTo(QtCore.QDate(fin.year(), fin.month(), 1)) > QtCore.QDate(fin.year(), fin.month(), 1).daysTo(fin):
-                self.shp.loc[index, "mois"] = french.toString(now, "MMMM")
+                self.shp.loc[index, "mois"] = self.french.toString(now, "MMMM")
                 self.shp.loc[index, "année"] = now.toString("yyyy")
-                self.shp.loc[index, "mois-année"] = french.toString(now, "MMMM-yy")
+                self.shp.loc[index, "mois-année"] = self.french.toString(now, "MMMM-yy")
             else:
-                self.shp.loc[index, "mois"] = french.toString(fin, "MMMM")
+                self.shp.loc[index, "mois"] = self.french.toString(fin, "MMMM")
                 self.shp.loc[index, "année"] = fin.toString("yyyy")
-                self.shp.loc[index, "mois-année"] = french.toString(fin, "MMMM-yy")
+                self.shp.loc[index, "mois-année"] = self.french.toString(fin, "MMMM-yy")
 
             self.shp.loc[index, "oeufs"] = x1
             self.shp.loc[index, "larves"] = x2
@@ -356,7 +358,7 @@ class SEIRModel:
             else:
                 self.shp.to_file(self.kmlExport, driver='KML')
 
-        columnsName = ["geometry","mdg_com_co", "mdg_fkt_co", "fokontany","date_debut","date_fin","mois", "année", "mois-année"] + checked_columns
+        columnsName = self.shp.columns.values.tolist()[:3] + ["geometry", "date_debut","date_fin","mois", "année", "mois-année"] + checked_columns
 
         # b) Export SHP
         if self.shpExport:
