@@ -34,6 +34,7 @@ class SEIRModel:
         self.shp["mois"] = ""
         self.shp["année"] = ""
         self.shp["mois-année"] = ""
+        self.shp["nbrepop"] = 0
         self.shp["oeufs"] = 10000000.0
         self.shp["nymphes"] = 0.0
         self.shp["larves"] = 0.0
@@ -295,6 +296,7 @@ class SEIRModel:
                 self.shp.loc[index, "année"] = fin.toString("yyyy")
                 self.shp.loc[index, "mois-année"] = self.french.toString(fin, "MMMM-yy")
 
+            self.shp.loc[index, "nbrepop"] = nbrepop
             self.shp.loc[index, "oeufs"] = x1
             self.shp.loc[index, "larves"] = x2
             self.shp.loc[index, "nymphes"] = x3
@@ -361,7 +363,7 @@ class SEIRModel:
             else:
                 self.shp.to_file(self.kmlExport, driver='KML')
 
-        columnsName = self.shp.columns.values.tolist()[:3] + ["geometry", "date_debut","date_fin","mois", "année", "mois-année"] + checked_columns
+        columnsName = self.shp.columns.values.tolist()[:3] + ["geometry", "date_debut","date_fin","mois", "année", "mois-année", "nbrepop"] + checked_columns
 
         # b) Export SHP
         if self.shpExport:
