@@ -1,7 +1,7 @@
-﻿![](images/Aspose.Words.411f69dd-9876-4c01-b4cb-8e82095608c8.001.png)![](images/Aspose.Words.411f69dd-9876-4c01-b4cb-8e82095608c8.002.png)
+﻿![](images/Aspose.Words.9326f846-99e4-4b56-8de9-e31b4f3d0602.001.png)![](images/Aspose.Words.9326f846-99e4-4b56-8de9-e31b4f3d0602.002.png)
 
 
-![](images/Aspose.Words.411f69dd-9876-4c01-b4cb-8e82095608c8.003.png)
+![](images/Aspose.Words.9326f846-99e4-4b56-8de9-e31b4f3d0602.003.png)
 
 
 # <a name="_4dw4d7grzozz"></a>Sommaire
@@ -35,7 +35,7 @@ L’outil se compose de 3 étapes divisées en 3 onglets :
 1. **Les paramètres de sortie** permettant de choisir les résultats à exporter ainsi que le format du fichier à exporter
 1. **La simulation** permettant de lancer le modèle
 
-![](images/Aspose.Words.411f69dd-9876-4c01-b4cb-8e82095608c8.004.jpeg)
+![](images/Aspose.Words.9326f846-99e4-4b56-8de9-e31b4f3d0602.004.jpeg)
 ### <a name="_toc142922158"></a>Etape 1 : Paramètres d’entrée
 Sous l’onglet paramètres d’entrée, l’utilisateur devrait choisir les 3 fichiers suivants :
 
@@ -43,7 +43,7 @@ Sous l’onglet paramètres d’entrée, l’utilisateur devrait choisir les 3 f
 - **Précipitations** contenant les données de précipitations des zones d’étude dans une période données
 - **Températures** contenant les données de températures des zones d’étude dans une période données
 
-![](images/Aspose.Words.411f69dd-9876-4c01-b4cb-8e82095608c8.005.jpeg)
+![](images/Aspose.Words.9326f846-99e4-4b56-8de9-e31b4f3d0602.005.jpeg)
 
 **NB :** les données d’entrée devraient suivre les conditions ci-dessous
 
@@ -81,13 +81,13 @@ Sous l’onglet paramètres de sortie, l’utilisateur devrait choisir les élé
 Si les valeurs choisis sont valides, alors l’utilisateur peut passer à l’onglet suivant « Simulation ». Sinon, un message d’erreur s’affiche.
 
 
-` `![](images/Aspose.Words.411f69dd-9876-4c01-b4cb-8e82095608c8.006.png)
+` `![](images/Aspose.Words.9326f846-99e4-4b56-8de9-e31b4f3d0602.006.jpeg)
 ### <a name="_ifhjg61qz3f"></a><a name="_toc142922160"></a>Etape 3 : Simulation
 Sous l’onglet « Simulation », l’outil résume les paramètres d’entrée et les paramètres de sortie choisis par l’utilisateur.
 
 Pour lancer le modèle, l’utilisateur devrait cliquer sur le bouton « Exécuter » en bas. Une boîte de dialogue apparaît ensuite pour confirmer la réponse de l’utilisateur.
 
-![](images/Aspose.Words.411f69dd-9876-4c01-b4cb-8e82095608c8.007.png)
+![](images/Aspose.Words.9326f846-99e4-4b56-8de9-e31b4f3d0602.007.jpeg)
 
 Une fois la simulation lancée, l’outil calcule les valeurs à exportées puis exporte les résultats selon les formats de fichier et la fréquence de sortie choisis par l’utilisateur.
 
@@ -95,11 +95,11 @@ Si les paramètres KL ou les données de température ou de précipitation sont 
 
 L’utilisateur peut annuler la simulation en cliquant sur le bouton « Annuler ». Sinon, une boîte de dialogue s’affiche lorsque la simulation est terminée.
 
-![](images/Aspose.Words.411f69dd-9876-4c01-b4cb-8e82095608c8.008.png)
+![](images/Aspose.Words.9326f846-99e4-4b56-8de9-e31b4f3d0602.008.jpeg)
 1. ## <a name="_toc142922161"></a>**Résultat de la simulation**
 Les résultats de la simulation sont sauvegardés dans le répertoire de sortie choisit par l’utilisateur dans l’onglet « Paramètres de sortie ». L’historique du paramétrage et de la simulation y sont stocké également au format texte (.txt).
 
-![](images/Aspose.Words.411f69dd-9876-4c01-b4cb-8e82095608c8.009.png)
+![](images/Aspose.Words.9326f846-99e4-4b56-8de9-e31b4f3d0602.009.jpeg)
 
 ### <a name="_toc142922162"></a>Description des champs
 Les noms des champs correspondent aux descriptions suivantes :
@@ -107,16 +107,10 @@ Les noms des champs correspondent aux descriptions suivantes :
 
 |**Nom**|**Description** |
 | :- | :- |
-|oeufs|Nombre des oeufs|
-|larves|Nombre des larves|
-|nymphes|Nombre des nymphes|
-|adultestot|Nombre des moustiques adultes|
-|a1o|Nombre des moustiques adultes femelles nullipares en recherche de sites de ponte|
-|a2o|Nombre des moustiques adultes femelles pares en recherche de sites de ponte|
-|ah|Nombre des moustiques adultes femelles nullipares et pares en recherche d'hôtes|
-|ahE|Nombre des moustiques adultes femelles en recherche d'hôtes exposés|
-|ahI|Nombre des moustiques adultes femelles en recherche d'hôtes infectés|
-|fkl|Capacité de charge de l'environnement larves et des nymphes |
+|adultestot|Nombre total des moustiques adultes femelles|
+|ah|Nombre des moustiques adultes femelles à la recherche d'hôte|
+|ahE|Nombre des moustiques adultes femelles exposées à la recherche d'hôte|
+|ahI|Nombre des moustiques adultes femelles infectées à la recherche d'hôte|
 |humS|Nombre des humains susceptibles|
 |humE|Nombre des humains exposés|
 |humI|Nombre des humains infectés|
@@ -124,9 +118,7 @@ Les noms des champs correspondent aux descriptions suivantes :
 
 Toutes les valeurs numériques exportés sont arrondies à des valeurs en entiers.
 
-![](images/Aspose.Words.411f69dd-9876-4c01-b4cb-8e82095608c8.010.jpeg)
-
 Les formats des dates sont transcrits en français
 
-![](images/Aspose.Words.411f69dd-9876-4c01-b4cb-8e82095608c8.011.jpeg)
+![](images/Aspose.Words.9326f846-99e4-4b56-8de9-e31b4f3d0602.010.jpeg)
 <a name="_fup6pzo06moj"></a>Page 7 sur 7
