@@ -35,8 +35,9 @@ class SEIRModel:
         self.shp["année"] = ""
         self.shp["mois-année"] = ""
         self.shp["oeufs"] = 10000000.0
-        self.shp["larves"] = 0.0
         self.shp["nymphes"] = 0.0
+        self.shp["larves"] = 0.0
+        self.shp["ah"] = 0.0
         self.shp["aem"] = 0.0
         self.shp["a1h"] = 0.0
         self.shp["a1g"] = 0.0
@@ -46,11 +47,12 @@ class SEIRModel:
         self.shp["a2o"] = 0.0
         self.shp["ahE"] = 0.0
         self.shp["ahI"] = 0.0
+        self.shp["fkl"] = 0.0
+        self.shp["adultestot"] = 0.0
         self.shp["humS"] = self.shp[nbPop]
         self.shp["humE"] = 0.0
         self.shp["humI"] = 0.0
         self.shp["humR"] = 0.0
-        self.shp["fkl"] = 0.0
 
     def getRainExtreme(self, df, paramMeteo, lieu):
         min =  df.loc[df[paramMeteo[0]] == lieu, paramMeteo[4]].min() 	# Précipitation minimum
@@ -131,9 +133,10 @@ class SEIRModel:
 
             # Egg development
             if temperature > TE :
-                fegg1 = (temperature - TE)
-                fegg = fegg1 / TDDE
-            if fegg < 0 :
+                fegg = (temperature - TE) / TDDE
+                if fegg < 0 :
+                    fegg = 0.0
+            else:
                 fegg = 0.0
 
             # Pupae development

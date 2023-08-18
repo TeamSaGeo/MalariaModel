@@ -21,7 +21,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Obtenir les logos
         self.logo_minsan.setPixmap(QPixmap(":/images/logo_minsan"))
         self.logo_pmi.setPixmap(QPixmap(":/images/logo_pmi"))
-        self.logo_usaid.setPixmap(QPixmap(":/images/logo_usaid"))
+        # self.logo_usaid.setPixmap(QPixmap(":/images/logo_usaid"))
         self.logo_ipm.setPixmap(QPixmap(":/images/logo_ipm"))
         self.setWindowIcon(QIcon(":/images/icon_model"))
 
@@ -44,7 +44,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # self.cancel = False
 
         # Initialisation du tableau Paramètres KL
-        rows_gite_larvaires = ["Code Commune","Surface des plans d'eau (m2)","Surface des rivières (m2)","Surface des cultures agricoles (m2)",
+        rows_gite_larvaires = ["Code OCHA","Surface des plans d'eau (m2)","Surface des rivières (m2)","Surface des cultures agricoles (m2)",
                                 "Surface des rizières (m2)","Surface totale (m2)", "préfixe du nombre de population (hab)"]
         col_gite_larvaires = ["Gîte larvaire"]
         self.table_gites.setColumnCount(len(col_gite_larvaires))
@@ -54,7 +54,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Initialisation du tableau Paramètres Météo
         columns = ["Précipitations", "Températures"]
-        rows = ["Code Commune", "Année", "Mois", "Jour", "Valeur"]
+        rows = ["Code OCHA", "Année", "Mois", "Jour", "Valeur"]
         self.table_meteo.setColumnCount(len(columns))
         self.table_meteo.setRowCount(len(rows))
         self.table_meteo.setHorizontalHeaderLabels(columns)
@@ -215,7 +215,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             button = QMessageBox.information(
                 self.centralwidget,
                 "Message d'erreur",
-                "Choisir des différents valeurs pour chaque ligne des paramètres KL ou météo",
+                "Veuillez choisir les lignes des paramètres environnementaux et/ou météo correspondantes",
                 )
             return True
 
@@ -346,11 +346,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         msg = "Modèle SEIR prêt à démarrer\n"
 
         msg += "\n-----------Paramètres d'entrée-----------\n"
-        msg += "Fichier environnemental source: "+ self.parcelFileName.text() +"\n"
+        msg += "Fichier environnemental: "+ self.parcelFileName.text() +"\n"
         msg += "Nombre de parcelles à traiter:\t"+ str(self.inputParams.shp.shape[0]) +"\n\n"
-        msg += "Données de précipitations source: "+ self.rainFileName.text() +"\n"
+        msg += "Fichier des données de précipitations: "+ self.rainFileName.text() +"\n"
         msg += "Taille des données de précipitations:\t" + str(len(self.inputParams.rainCSVData)) +" lignes\n\n"
-        msg += "Données de températures source: "+ self.tempFileName.text() +"\n"
+        msg += "Fichier des données de températures: "+ self.tempFileName.text() +"\n"
         msg += "Taille des données de températures:\t" + str(len(self.inputParams.tempCSVData)) +" lignes\n"
 
         msg += "\n-----------Paramètres de sortie-----------\n"
